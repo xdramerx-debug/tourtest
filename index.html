@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Турнир · Live Scoring Пестово</title>
+  <meta name="description" content="Турнир по гольфу в Пестово: формат, расписание, цены, стартовый лист, live-лидерборд." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .inc-list { margin: 0; padding-left: 18px; font-size: 14px; }
+    .inc-list li { margin: 4px 0; }
+    .fee-cards { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+    .fee-card { flex: 1; min-width: 110px; border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; text-align: center; background: var(--bg-soft); }
+    .fee-card b { display: block; font-size: 20px; font-family: var(--mono); }
+    .fee-card span { font-size: 12px; color: var(--muted); }
+    .fee-card.hl { border-color: var(--accent); }
+    .fee-card.hl b { color: var(--accent); }
+  </style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">⛳</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
+  <nav class="mainnav">
+    <a href="index.html" class="active">Турнир</a>
+    <a href="leaderboard.html">Лидерборд</a>
+    <a href="startlist.html">Стартовый лист</a>
+    <a href="prizes.html">Призы</a>
+    <a href="rules.html">Правила</a>
+    <a href="register.html">Регистрация</a>
+    <a href="admin.html">Админ</a>
+  </nav>
+  <div class="topbar-status">
+    <span id="demo-badge" class="demo-badge" hidden>Демо</span>
+    <span id="conn" class="conn"><i></i><span>…</span></span>
+  </div>
+</header>
+<div id="alert-bar"></div>
+
+<main>
+  <section class="hero">
+    <div class="hero-top">
+      <span class="edition" id="h-edition"></span>
+      <span id="h-status"></span>
+    </div>
+    <h1 id="h-name"></h1>
+    <p class="subtitle" id="h-subtitle"></p>
+    <p class="dates" id="h-dates"></p>
+    <div class="hero-cta">
+      <a class="btn btn-primary" href="register.html">Зарегистрироваться</a>
+      <a class="btn" href="startlist.html">Стартовый лист</a>
+      <a class="btn" href="leaderboard.html">Лидерборд</a>
+      <a class="btn btn-ghost" href="rules.html">Правила</a>
+    </div>
+    <div class="cd" id="countdown"><span class="cd-label" id="cd-label"></span><span id="cd-live"></span></div>
+    <div class="sponsor-row" id="h-sponsors"></div>
+  </section>
+
+  <div class="grid grid-2">
+    <section class="card">
+      <h2>Информация о турнире</h2>
+      <dl class="kv" id="c-format"></dl>
+      <h3>Наборы ти и рейтинги</h3>
+      <div class="table-wrap"><table class="tbl" id="c-tees"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Клуб и поле</h2>
+      <dl class="kv" id="c-club"></dl>
+      <h3>Категории участников</h3>
+      <div class="table-wrap"><table class="tbl" id="c-cats"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Стоимость</h2>
+      <div class="fee-cards" id="c-fees"></div>
+      <h3>Включено во взнос</h3>
+      <ul class="inc-list" id="c-included"></ul>
+      <h3>Дополнительные опции</h3>
+      <div class="table-wrap"><table class="tbl" id="c-options"></table></div>
+    </section>
+
+    <section class="card">
+      <h2>Расписание дня</h2>
+      <ul class="timeline" id="c-timeline"></ul>
+    </section>
+
+    <section class="card">
+      <h2>QR-доступ</h2>
+      <p class="muted small">Сканируйте с телефона: лидерборд, стартовый лист, правила, регистрация.</p>
+      <div class="qr-row" id="c-qr"></div>
+      <h3>Печатные документы (PDF)</h3>
+      <div class="hero-cta">
+        <a class="btn" href="startlist.html">Стартовый лист</a>
+        <a class="btn" href="leaderboard.html">Лидерборд</a>
+        <a class="btn" href="rules.html">Local Rules</a>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Турнирный комитет</h2>
+      <dl class="kv" id="c-committee"></dl>
+      <h3>Pace of Play</h3>
+      <dl class="kv" id="c-pace"></dl>
+    </section>
+  </div>
+</main>
+
+<footer class="site-footer">
+  <span id="f-name"></span>
+  <span>Данные обновляются в реальном времени · Firebase Realtime Database</span>
+</footer>
+<div id="print-area"></div>
+
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/hub.js"></script>
+</body>
+</html>
