@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Стартовый лист · Live Scoring Пестово</title>
+  <meta name="description" content="Стартовый лист турнира: tee times, группы, QR-коды. Печать в PDF." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .sl-player { display: flex; gap: 8px; align-items: center; text-decoration: none; color: var(--text); }
+    .sl-player:hover .pname { color: var(--accent); }
+    .publish-tag { font-size: 12px; color: var(--muted); }
+  </style>
+  <style>@media print { @page { size: A4 landscape; margin: 9mm; } }</style>
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">⛳</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
+  <nav class="mainnav">
+    <a href="index.html">Турнир</a>
+    <a href="leaderboard.html">Лидерборд</a>
+    <a href="startlist.html" class="active">Стартовый лист</a>
+    <a href="prizes.html">Призы</a>
+    <a href="rules.html">Правила</a>
+    <a href="register.html">Регистрация</a>
+    <a href="admin.html">Админ</a>
+  </nav>
+  <div class="topbar-status">
+    <span id="demo-badge" class="demo-badge" hidden>Демо</span>
+    <span id="conn" class="conn"><i></i><span>…</span></span>
+  </div>
+</header>
+<div id="alert-bar"></div>
+
+<main>
+  <div class="toolbar">
+    <input id="f-q" type="search" placeholder="Найди своё время: имя, номер группы, время…" style="min-width:260px" />
+    <div class="spacer"></div>
+    <span id="sl-published" class="publish-tag"></span>
+    <button class="btn btn-sm" id="b-print">🖨 Скачать PDF / печать</button>
+  </div>
+
+  <div class="table-wrap">
+    <table class="tbl" id="sl-table"></table>
+  </div>
+  <p class="muted small" style="margin-top:10px">
+    Клик по игроку — карточка с персональным QR · клик «QR группы» — цифровая группа (ввод скоркарт, правила)
+  </p>
+
+  <section class="card" style="margin-top:18px">
+    <h2>QR-коды для размещения</h2>
+    <p class="muted small">Общий QR стартового листа — на доску объявлений и в клубхаус.</p>
+    <div class="qr-row" id="sl-qr"></div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <span id="f-name"></span>
+  <span>Обновляется автоматически при изменениях в базе</span>
+</footer>
+<div id="print-area"></div>
+
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/startlist.js"></script>
+</body>
+</html>

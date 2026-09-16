@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Регистрация · Live Scoring Пестово</title>
+  <meta name="description" content="Регистрация на турнир по гольфу: форма участника, категория, гандикап, логистика." />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<header class="topbar">
+  <a class="brand" href="index.html"><span class="brand-mark">⛳</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
+  <nav class="mainnav">
+    <a href="index.html">Турнир</a>
+    <a href="leaderboard.html">Лидерборд</a>
+    <a href="startlist.html">Стартовый лист</a>
+    <a href="prizes.html">Призы</a>
+    <a href="rules.html">Правила</a>
+    <a href="register.html" class="active">Регистрация</a>
+    <a href="admin.html">Админ</a>
+  </nav>
+  <div class="topbar-status">
+    <span id="demo-badge" class="demo-badge" hidden>Демо</span>
+    <span id="conn" class="conn"><i></i><span>…</span></span>
+  </div>
+</header>
+<div id="alert-bar"></div>
+
+<main id="reg-main" style="max-width:760px"></main>
+
+<footer class="site-footer">
+  <span id="f-name"></span>
+  <span>Заявки с статусом «ожидает подтверждения» · комитет подтверждает допуск</span>
+</footer>
+<div id="print-area"></div>
+
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/11.1.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="js/config.js"></script>
+<script src="js/calc.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/store.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/register.js"></script>
+</body>
+</html>
