@@ -28,7 +28,7 @@ jobs:
       - run: npm ci --no-audit
       - run: npm run build
       - run: npm run build -w @csl/scoring-app
-      - name: pack dist-pages (v2: scoring — корень; матрица v1 — /variants/)
+      - name: pack dist-pages (scoring в корень, матрица в variants)
         run: |
           set -euo pipefail
           mkdir -p dist-pages/variants
