@@ -1,90 +1,91 @@
-# Live Scoring — Пестово (гльф-турнир)
+# ClubScore Live — высокотехнологичный live-скоринг для гольф-клуба
 
-Система организации гольф-турнира уровня European Tour, адаптированная под клуб:
-чистый HTML/JS + **Firebase Realtime Database** (без сборщика, без бэкенда).
+Монорепо. **v2: одно приложение `apps/scoring` с полным функционалом и пятью горячими
+премиум-шаблонами** (переключение на лету: UI-пикер, `Alt+T`/`Alt+1..5`, `?theme=N`,
+localStorage+профиль, системная тема — приоритет дефолта). Функциональная матрица v1
+(3 варианта × 5 дизайнов = 15 сборок) живёт как регрессионная песочница под `/variants/`.
 
-## Страницы
+## Демо
 
-| Страница | Назначение |
+| Что | URL |
 |---|---|
-| `index.html` | Tournament Hub: баннер, обратный отсчёт, формат, ти/CR/Slope, цены, расписание, QR |
-| `leaderboard.html` | Live-лидерборд (real-time), позиции с countback, hole-by-hole, **TV-режим** (`?tv=1`), PDF |
-| `startlist.html` | Стартовый лист: tee times, группы, QR, PDF A4 |
-| `player.html` | Карточка игрока (?id=) / группа (?group=): PH, удары, check-in, QR, печать A6 |
-| `scorecard.html` | Цифровая скоркарта: live-ввод по QR, Net/Stableford/NDB, подписи, печать A4 |
-| `register.html` | Регистрация участника (заявка → pending → QR для check-in) |
-| `prizes.html` | Longest Drive / Closest to the Pin / Hole-in-One: live-топы + ввод маршалов |
-| `rules.html` | Conditions of Competition, Local Rules, Pace of Play, PDF |
-| `admin.html` | Лёгкая админка: статусы, генерация стартового листа, публикация, check-in |
+| **Продукт v2 (полный функционал, 5 тем)** | https://xdramerx-debug.github.io/tourtest/ |
+| Тема 5 (Night) по ссылке | https://xdramerx-debug.github.io/tourtest/?theme=5 |
+| Матрица v1 (15 сборок) | https://xdramerx-debug.github.io/tourtest/variants/ |
 
-## Документация
+Демо-коды турниров (в DemoTransport, «сервер в браузере»): `DUBRO6` — открытый турнир
+(stroke, live), `SCRAM4` — корпоративный скрембл, `SKINS9` — вечерний скинс (9 лунок).
 
-- `docs/PLAN.md` — sitemap, user stories, матрица QR, план MVP → V2 → V3
-- `docs/DATA_MODEL.md` — модель данных RTDB, правила расчётов (WHS), боевые Rules
-- `docs/CHECKLIST.md` — чеклист организатора (T-7 / T-1 / день турнира / T+1)
-
-## Запуск
-
-```bash
-python3 -m http.server 8080
-# → http://localhost:8080
-```
-
-Деплой в продакшен — **Firebase Hosting** (статика):
-```bash
-firebase init hosting   # public directory: . / no rewrite
-firebase deploy
-```
-После деплоя задай `SITE_CONFIG.siteBase` в `js/config.js` на свой URL (для QR-кодов).
-
-## Как устроены данные
-
-Всё живёт в Realtime Database: `tournaments/{id}/…` (см. `docs/DATA_MODEL.md`).
-Пока узел `tournaments/` пуст — сайт автоматически показывает **демо-данные**
-(12 игроков, 3 группы, призовые; правки хранятся в localStorage).
-Создай первый турнир в консоли Firebase — сайт сам переключится на живые данные.
-
-> ⚠️ Test mode базы живёт 30 дней. Перед турном поставь боевые Rules из `docs/DATA_MODEL.md`.
-
----
-
-# ClubScore Live — новая архитектура (фазы 1–4, монорепо)
-
-Легаси-статика выше оставлена как история. Актуальный контур — npm-workspaces монорепо с 15 сборками **3 варианта × 5 дизайнов** (VARIANTS.md, DESIGNS.md).
+В проде вместо DemoTransport поднимается sync-сервер `apps/server` (SSE + очередь,
+DEPLOY.md §1).
 
 ## Структура
+
 ```
 packages/
-  core            — доменная модель, zod-схемы, i18n (ru/en), правила конверта действий
-  scoring-engine  — WHS-гандикапы, 10 форматов, countback, флайты (тестов ≥60, порог 90%)
-  sync            — журнал действий, идемпотентность, timestamp→роль резолвер, SSE-транспорты
-  design-system   — React-примитивы + ds.css (тач ≥48px, ARIA)
-  tokens          — 5 дизайн-тем × {light,dark,sun}; CSS-генерация scripts/build-themes.mjs
-  testing         — детерминированные фикстуры (mulberry32)
-  app-ui          — экраны/роуты/паттерны IA; фичи вариантов — VARIANT_FEATURES
+  core/            # доменные модели, zod-схемы, i18n ru/en, API-клиент
+  scoring-engine/  # ЧИСТЫЕ функции: счёт, WHS-гандикап, 10 форматов, лидерборд, skins, флайты, tie-break
+  sync/            # offline-first: очередь IndexedDB, backoff, конфликты timestamp→role, SSE, zustand-store
+  design-system/   # компоненты/паттерны/иконки + варианты под 5 дизайнов (ds.css, [data-design])
+  tokens/          # 5 наборов дизайн-токенов [data-design][data-mode], генератор CSS+шрифтов
 apps/
-  server          — SSE-скоринг-сервер (node:sqlite журнал, ADR-0003)
-  variant-{a-core,b-tournament,c-experimental}/design-{1..5}  — 15 приложений
-scripts/          — gen-apps, build-all-apps, check-{boundaries,routes,i18n,bundle,contrast}, sim-tournament
+  scoring/         # ПРОДУКТ v2: одно приложение, 5 горячих тем (themeSwitch)
+  server/          # sync/REST сервер (Node, SSE, идемпотентность, аудит)
+  variant-{a,b,c}-*/design-{1..5}/  # матрица v1: 15 изолированных сборок (генерируются scripts/gen-apps.mjs)
+e2e/               # Playwright: smoke путей v1 + scoring.spec.ts (горячие темы v2)
+scripts/           # генерация приложений, сборка, бюджеты бандла, контраст, i18n, sim-турнир, serve-pages
+*.md               # источники правды (16 файлов: PRODUCT…ESTIMATE/SUCCESS)
 ```
 
-## Команды
+## Источники правды
+
+Единственное ТЗ живёт в корне: `PRODUCT.md` (§0 — v2), `FEATURES.md`, `VARIANTS.md` (архив v1),
+`DESIGNS.md` (5 шаблонов + таблица 10 осей, ≥7 различий между любой парой), `NFR.md`,
+`RULES.md` (R&A/USGA + WHS), `FORMATS.md` (10 форматов), `IA.md`, `ADAPTIVE.md`,
+`USER_FLOWS.md` (F0+v2 — переключение темы), `ARCHITECTURE.md` (§0 — механика тем),
+`DEPLOY.md` (§0 — Pages: scoring в корне), `ESTIMATE.md`, `SUCCESS.md`, `REVIEW.md`.
+
+## Пять шаблонов (не перекраски!)
+
+1. **Classic Country Club** — серифы, крем, золото, печатная карточка, воздух.
+2. **Broadcast / Majors** — ТВ-доска: тикер, плотность, E/-2/+1/thru, красно-синие акценты.
+3. **Modern Sport** — бенто-карточки, графит, вольт, стекло, энергия.
+4. **Precision / Instruments** — прибор: моноширинные цифры, строгая сетка, минимум декора.
+5. **Night Round** — ночной округ: глубокий фон, мягкое свечение, читаемость в темноте.
+
+Механика: один бандл — CSS всех 5 тем ≈ 8.5 КБ gzip включено сразу (NFR §0 v2),
+переключение — flip `data-design`/`data-mode` на `<html>`: мгновенно, без перезагрузки,
+без потери состояния (тесты `e2e/scoring.spec.ts`), шрифты тем подгружаются лениво.
+
+## Команды разработки
+
 ```bash
-npm ci --no-audit
-npm test && npm run typecheck && npm run lint
-npm run dev --workspace @csl/app-a-d1     # любое из 15 приложений
-npm run build                              # токены + 15 сборок
-npm run check:all                          # границы+типы+тесты+контраст
-node scripts/check-i18n.mjs && node scripts/check-routes.mjs && node scripts/check-bundle.mjs
-npx tsx scripts/sim-tournament.mjs 144     # нагрузочная проверка движка
-npm run server                             # SSE-сервер (PORT=8787, CSL_DB=…)
+npm ci                      # установка
+npm run build               # tokens CSS + 15 сборок v1 + apps/scoring
+npm run test                # vitest: 100+ юнит-тестов (engine, sync, app-ui, темы)
+npm run typecheck && npm run lint && npm run check:contrast
+npm run check:bundle        # бюджеты: JS ≤350 КБ gz, CSS ≤60 КБ gz
+npm run sim                 # симуляция: 144 игрока, раунд, offline, конфликты (~1.6 мс итог)
+npm run preview -- apps/scoring/dist 4020   # статический превью собранного приложения
+npx playwright test         # e2e (в CI; headless, chromium)
 ```
 
-## Live-режимы
-- **GitHub Pages** (deploy-pages.yml): статические сборки /<v>-d<d>/, DemoTransport — «сервер в браузере» (D8), счёт переживает перезагрузку (localStorage-журнал).
-- **Сервер**: `npm run server` + RemoteTransport — SSE-стрим с Last-Event-ID докачкой, журнал sqlite (идемпотентные вставки, аудит).
+## CI/CD (`.github/workflows/`)
 
-## Процессы
-- CI: `.github/workflows/ci.yml` (boundaries, types, unit, контракты, bundle budget, симуляция 144 игроков).
-- E2E: `.github/workflows/e2e.yml` — playwright против приоритетных сборок (SMART-цель «3/5 с первого раза»).
-- Качество/решения: docs/adr/ADR-0003 (sqlite), CONTRIBUTING.md, 16 спек в корне (фаза 0, scope freeze).
+- `ci.yml` — lint, typecheck, unit, contrast, bundle (push+PR).
+- `e2e.yml` — playwright: smoke v1 (а×1..3, b×2, c×5) + `scoring` v2 (?theme=, пикер, хоткеи, no-loss).
+- `deploy-pages.yml` — сборка и публикация: `apps/scoring` в корень Pages, матрица v1 в `/variants/`.
+
+## Доказательства качества
+
+- тесты: 106/106 unit (зелёные в CI), e2e: 12 smoke + 4 scoring v2 (зелёные);
+- офлайн: раунд принимает счёт без сети, синхронизация при появлении, конфликты по
+  timestamp→role (referee > marker > player); Идемпотентность actionId;
+- бандл: scoring JS ≈ 137 КБ gz + 33 КБ (vendor) ≤ 350; CSS всех тем ≈ 8.5 КБ gz ≤ 60;
+- контраст: `check:contrast` 5 дизайнов × 3 режима (солнце ≥7:1 цифры) — OK;
+- адаптив: e2e на 320/390/desktop(1366), тач-таргеты ≥48px, ландшафт;
+- i18n: ru/en, Intl-форматчики, +30% строк, RTL-smoke.
+
+## Merge
+
+Сборка v2 живёт в PR (методологически merge — одним кликом пользователя).

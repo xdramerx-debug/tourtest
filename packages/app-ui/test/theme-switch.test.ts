@@ -64,6 +64,21 @@ describe('theme-switch (ARCHITECTURE §0 v2)', () => {
     expect(hotkeyDesign('q', true)).toBeNull();
   });
 
+  it('RTL-smoke: переключение тем не зависит от направления документа (заготовка под i18n RTL)', async () => {
+    // SSR: меню пикера и имена тем должны рендериться при dir=rtl без падения
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const React = await import('react');
+    const { themeById } = await import('@csl/tokens');
+    const html = renderToStaticMarkup(
+      React.createElement(
+        'div', { dir: 'rtl' },
+        DESIGN_IDS.map((id) => React.createElement('span', { key: id }, themeById[id].name)),
+      ),
+    );
+    expect(html).toContain('Classic');
+    expect(DESIGN_IDS.every((id) => html.includes(themeById[id].name))).toBe(true);
+  });
+
   describe('persistDesign', () => {
     let s: ReturnType<typeof memStorage>;
     beforeEach(() => { s = memStorage(); });
