@@ -3,7 +3,17 @@ import { test, expect } from '@playwright/test';
 /**
  * Контурные e2e (SUCCESS §«extended checklist»): home → join → лобби → ввод лунки → табло.
  * Гоняются против статической сборки (DemoTransport), что и Pages-витрина.
+ *
+ * Диагностика: pageerror/console.error копятся и уходят в assertion —
+ * текст ошибки виден в GitHub-аннотациях (логи раннеров в песочнице недоступны).
  */
+const pageErrors: string[] = [];
+test.beforeEach(async ({ page }) => {
+  pageErrors.length = 0;
+  page.on('pageerror', (e) => pageErrors.push(`pageerror: ${String(e).slice(0, 300)}`));
+  page.on('console', (m) => { if (m.type() === 'error') pageErrors.push(`console: ${m.text().slice(0, 300)}`); });
+});
+
 test.describe('критические пути F0–F2', () => {
   test('главная открывается и ведёт к join', async ({ page }) => {
     await page.goto('./');
@@ -29,6 +39,8 @@ test.describe('критические пути F0–F2', () => {
 
   test('лидерборд открывается без сессии (зритель)', async ({ page }) => {
     await page.goto('./t/t-open/board');
+    await page.waitForTimeout(1500);
+    expect(pageErrors, 'JS-ошибки на странице').toEqual([]);
     await expect(page.getByText(/лидерборд/i).first()).toBeVisible();
   });
 
