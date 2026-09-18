@@ -36,7 +36,8 @@ createServer((req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(`<meta charset="utf-8"><h1>ClubScore Live builds</h1><ul>${links.join('')}</ul>`);
   }
-  if (!existsSync(p) || statSync(p).isDirectory()) {
+  if (existsSync(p) && statSync(p).isDirectory()) p = join(p, 'index.html');
+  if (!existsSync(p)) {
     // SPA fallback как на GH Pages: 404.html реализует redirect-трюк (D9),
     // локально базой приложения считаем корень превью
     const nf = join(dir, '404.html');

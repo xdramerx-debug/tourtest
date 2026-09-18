@@ -31,6 +31,10 @@ beforeAll(async () => {
   });
   const base = createTournamentStore({ transport });
   await base.connect();
+  // сессия игрока до заморозки snapshot: SSR читает getInitialState (zustand v5)
+  const { joinCode } = base.getState().tournament!;
+  const joined = base.join({ code: joinCode, name: 'SSR Тестер', hi: 18, teeSetKey: 'mens', asMarker: false });
+  if (!joined.ok) throw new Error(`join failed: ${joined.error}`);
   // zustand v5 на SSR читает getInitialState (пустое) — оборачиваем store,
   // чтобы SSR видел то же, что браузер после гидрации (getState == getInitialState).
   const state = base.getState();
@@ -62,7 +66,8 @@ function renderWithStore(node: React.ReactNode) {
 
 describe('экраны на живом demo-store (диагностика)', () => {
   it('данные подключились', () => {
-    expect(store.getState().tournament?.entries.length).toBe(48);
+    // 48 ботов + SSR-игрок из join (beforeAll)
+    expect(store.getState().tournament?.entries.length).toBeGreaterThanOrEqual(48);
     expect(Object.keys(store.getState().scores[0] ?? {}).length).toBeGreaterThan(0);
   });
   it('Board рендерится', () => {
@@ -73,11 +78,9 @@ describe('экраны на живом demo-store (диагностика)', () 
     expect(renderWithStore(<LobbyScreen />).length).toBeGreaterThan(200);
   });
   it('Play рендерится', () => {
-    // без сессии Play — редирект на /join (SSR <Navigate> пуст); с сессией — пад ввода
-    store.loginAs('player', 'Тестер SSR');
-    const html = renderWithStore(<PlayScreen />);
-    store.logout();
-    expect(html.length).toBeGreaterThan(200);
+    // без сессии Play — редирект на /join (SSR <Navigate> пуст); сессия создана в beforeAll
+    expect(store.getState().session?.playerId).toBeTruthy();
+    expect(renderWithStore(<PlayScreen />).length).toBeGreaterThan(200);
   });
   it('Profile рендерится', () => {
     expect(renderWithStore(<ProfileScreen />).length).toBeGreaterThan(50);
