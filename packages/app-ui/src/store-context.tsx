@@ -8,6 +8,7 @@ import type { DemoTournamentInfo } from './config';
 
 /** StoreContext: один активный турнир на приложение (IA: живой турнир клуба). */
 const StoreContext = createContext<TourneyStore | null>(null);
+export { StoreContext as TourneyStoreContext };
 
 export function TournamentProvider({ info, children }: { info: DemoTournamentInfo | null; children: React.ReactNode }) {
   const [store, setStore] = useState<TourneyStore | null>(null);

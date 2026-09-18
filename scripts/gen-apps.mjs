@@ -91,6 +91,24 @@ createRoot(document.getElementById('root')!).render(
 );
 `;
 
+const notFoundHtml = `<!doctype html>
+<!-- @generated scripts/gen-apps.mjs — spa-gh-pages трюк (D9).
+     Deep-link /app-base/<route> → GH Pages/serve-pages отдаёт этот 404; переводим путь
+     в hash и грузим корень приложения. __APP_BASE__ подставляется при деплое
+     (scripts + workflow) или локальным превью-сервером. -->
+<meta charset="utf-8">
+<script>
+  var APP = '__APP_BASE__';
+  var p = location.pathname;
+  if (p.indexOf(APP) === 0) {
+    location.replace(APP + '#/' + p.slice(APP.length).replace(/^\\/+/, '') + location.search);
+  } else {
+    location.replace(APP);
+  }
+</script>
+<title>ClubScore Live</title>
+`;
+
 const manifest = (v, d) => JSON.stringify({
   name: `ClubScore Live ${VARIANT_TITLE[v]}`,
   short_name: `CSL ${VARIANT_TITLE[v]}`,
@@ -152,6 +170,7 @@ for (const v of VARIANTS) {
     w('index.html', indexHtml(v, d));
     w('src/main.tsx', mainTsx(v, d));
     w('public/manifest.webmanifest', manifest(v, d));
+    w('public/404.html', notFoundHtml);
     w('public/icon.svg', icon('#14532d'));
     w('public/icon-maskable.svg', icon('#0b1f14', '<rect width="512" height="512" rx="256" fill="#14532d"/>'));
     w('public/sw.js', swJs);

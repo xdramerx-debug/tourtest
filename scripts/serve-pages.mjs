@@ -36,8 +36,16 @@ createServer((req, res) => {
     res.writeHead(200, { 'content-type': 'text/html; charset=utf-8' });
     return res.end(`<meta charset="utf-8"><h1>ClubScore Live builds</h1><ul>${links.join('')}</ul>`);
   }
-  if (!existsSync(p) || statSync(p).isDirectory()) p = join(dir, 'index.html'); // SPA fallback
-  if (!existsSync(p)) { res.writeHead(404); return res.end('not found'); }
+  if (!existsSync(p) || statSync(p).isDirectory()) {
+    // SPA fallback как на GH Pages: 404.html реализует redirect-трюк (D9),
+    // локально базой приложения считаем корень превью
+    const nf = join(dir, '404.html');
+    if (existsSync(nf)) {
+      res.writeHead(404, { 'content-type': 'text/html; charset=utf-8' });
+      return res.end(readFileSync(nf, 'utf8').replace(/__APP_BASE__/g, '/'));
+    }
+    res.writeHead(404); return res.end('not found');
+  }
   res.writeHead(200, { 'content-type': MIME[extname(p)] ?? 'application/octet-stream' });
   res.end(readFileSync(p));
 }).listen(port, '0.0.0.0', () => console.log(`[pages] ${dir} → http://0.0.0.0:${port}`));

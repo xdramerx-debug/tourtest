@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import {
-  createBrowserRouter, RouterProvider, Outlet, Navigate, useParams,
+  createHashRouter, RouterProvider, Outlet, Navigate, useParams,
 } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n } from '@csl/core';
@@ -27,6 +27,7 @@ import { registerSW } from './sw';
 
 interface ThemeCtx { mode: Mode; setMode: (m: Mode) => void; config: AppConfig; features: VariantFeatures }
 const Ctx = createContext<ThemeCtx>(null as unknown as ThemeCtx);
+export const AppContext = Ctx;
 export const useApp = () => useContext(Ctx);
 
 function findInfo(variant: AppConfig['variant'], tid: string | undefined): DemoTournamentInfo {
@@ -61,7 +62,9 @@ export function AppRoot({ config }: { config: AppConfig }) {
 
   const ctx = useMemo<ThemeCtx>(() => ({ mode, setMode, config, features }), [mode, config, features]);
 
-  const router = useMemo(() => createBrowserRouter([
+  // HashRouter (D9): статический хостинг с произвольным префиксом — относительный
+  // base './' не ломает загрузку модулей; deep-link на чистый путь переводится в hash из 404.html.
+  const router = useMemo(() => createHashRouter([
     {
       path: '/',
       element: <Ctx.Provider value={ctx}><AppLayout /></Ctx.Provider>,
@@ -94,7 +97,7 @@ export function AppRoot({ config }: { config: AppConfig }) {
         { path: '*', element: <Navigate to="/" replace /> },
       ],
     },
-  ], { basename: basename() }), [ctx, features]);
+  ]), [ctx, features]);
 
   return (
     <I18nextProvider i18n={i18n}>
@@ -103,13 +106,7 @@ export function AppRoot({ config }: { config: AppConfig }) {
   );
 }
 
-function basename(): string {
-  // Vite base './': SPA живёт в директории страницы (GH Pages /<v>-<d>/), basename = её каталог
-  try {
-    const dir = new URL(document.baseURI).pathname.replace(/[^/]*$/, '');
-    return dir.endsWith('/') ? dir.slice(0, -1) || '/' : dir;
-  } catch { return '/'; }
-}
+
 
 function OfflineStub() {
   return (
