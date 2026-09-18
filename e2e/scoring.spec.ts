@@ -80,29 +80,20 @@ test.describe('горячие шаблоны v2 (apps/scoring)', () => {
     await expect(page).toHaveURL(/#\/t\//);
     await page.getByRole('link', { name: /начать раунд/i }).click();
     await expect(page).toHaveURL(/play/);
-    // вводим счёт 5 на первой лунке — большая цифра пада подтверждает запись
-    const key5 = page.getByRole('button', { name: /^5$/ }).first();
-    const keyHtml = await key5.evaluate((n) => n.outerHTML.slice(0, 120));
-    await key5.click();
-    await page.waitForTimeout(600);
+    // вводим счёт 5 на первой лунке — пад применяет и авто-переходит на h/2 (ожидаем)
+    await page.getByRole('button', { name: /^5$/ }).first().click();
+    await expect(page).toHaveURL(/\/play\/h\/2/, { timeout: 4000 });
     expect.soft(pageErrors, 'JS-ошибки на play').toEqual([]);
-    const padState = await page.evaluate(() => ({
-      activeKeys: [...document.querySelectorAll('.ds-pad__key.is-active')].map((x) => x.textContent),
-      bignum: document.querySelector('.ds-sc__bignum')?.textContent,
-      storage: Object.keys(localStorage).filter((k) => k.includes('csl')).map((k) => `${k}=${localStorage.getItem(k)?.slice(0, 60)}`),
-      url: location.href,
-      holeBlocks: document.querySelectorAll('.ds-sc__hole').length,
-    }));
-    expect(padState.bignum, JSON.stringify({ padState, keyHtml, pageErrors }, null, 1)).toBe('5');
     // два переключения подряд (Alt+T цикл)
     const before = await designOf(page);
     await page.keyboard.down('Alt'); await page.keyboard.press('t'); await page.keyboard.up('Alt');
     await page.keyboard.down('Alt'); await page.keyboard.press('t'); await page.keyboard.up('Alt');
     const after2 = await designOf(page);
     expect(after2).not.toBe(before);
-    // введённое значение не потерялось ни в UI, ни в данных
+    // возвращаемся на h/1: введённое 5 не потерялось ни в UI, ни в данных
+    await page.goto(`${BASE}#/t/t-open/play/h/1`);
     await expect(page.locator('.ds-sc__bignum').first()).toHaveText(/^5$/, { timeout: 5000 });
-    const session = await page.evaluate(() => localStorage.getItem('csl.session'));
-    expect(session, 'join-сессия сохранена при переключении тем').toBeTruthy();
+    const session = await page.evaluate(() => Object.keys(localStorage).filter((k) => k.startsWith('csl.session.')));
+    expect(session.length, 'join-сессия сохранена при переключении тем').toBeGreaterThan(0);
   });
 });
