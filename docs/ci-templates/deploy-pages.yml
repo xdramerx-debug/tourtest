@@ -1,0 +1,53 @@
+name: deploy-pages
+
+# Демо-витрина GH Pages (ARCHITECTURE §12, D8): 15 статических сборок разложены
+# по /<variant>-<design>/, DemoTransport исполняет «сервер в браузере».
+on:
+  push:
+    branches: [arena/**]
+  workflow_dispatch:
+
+permissions:
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit
+      - run: npm run build
+      - name: pack dist-pages
+        run: |
+          set -euo pipefail
+          mkdir -p dist-pages
+          for v in variant-a-core variant-b-tournament variant-c-experimental; do
+            for d in 1 2 3 4 5; do
+              short=$(echo "$v" | sed 's/variant-\(.\)-.*/\1/')
+              cp -r "apps/$v/design-$d/dist" "dist-pages/${short}-d${d}"
+            done
+          done
+          cp scripts/pages-index.html dist-pages/index.html
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist-pages
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

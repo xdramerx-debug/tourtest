@@ -1,0 +1,26 @@
+# --- dependencies & env (жёсткое правило брифа: не коммитить) ---
+node_modules/
+.env
+.env.*
+!.env.example
+
+# --- builds ---
+dist/
+dist-pages/
+packages/tokens/dist/
+coverage/
+*.tsbuildinfo
+
+# --- evidence & artifacts ---
+evidence/
+artifacts/
+site-*.zip
+
+# --- runtime / local servers ---
+apps/server/data/
+*.log
+
+# --- os/editor ---
+.DS_Store
+.vscode/
+.idea/

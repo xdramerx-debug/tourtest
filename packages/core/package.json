@@ -1,0 +1,11 @@
+{
+  "name": "@csl/core",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live core: доменные модели, zod-схемы, i18n",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}

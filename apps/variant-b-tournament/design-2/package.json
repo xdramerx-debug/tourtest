@@ -1,0 +1,25 @@
+{
+  "name": "@csl/app-b-d2",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0"
+  },
+  "dependencies": {
+    "@csl/app-ui": "0.1.0",
+    "@csl/core": "0.1.0",
+    "@csl/design-system": "0.1.0",
+    "@csl/scoring-engine": "0.1.0",
+    "@csl/sync": "0.1.0",
+    "@csl/tokens": "0.1.0",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "react-router-dom": "^6.28.0",
+    "react-i18next": "^15.1.1",
+    "i18next": "^24.2.0",
+    "zustand": "^5.0.2"
+  }
+}
