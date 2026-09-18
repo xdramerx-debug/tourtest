@@ -1,0 +1,16 @@
+<!doctype html>
+<!-- @generated scripts/gen-apps.mjs — spa-gh-pages трюк (D9).
+     Deep-link /app-base/<route> → GH Pages/serve-pages отдаёт этот 404; переводим путь
+     в hash и грузим корень приложения. __APP_BASE__ подставляется при деплое
+     (scripts + workflow) или локальным превью-сервером. -->
+<meta charset="utf-8">
+<script>
+  var APP = '__APP_BASE__';
+  var p = location.pathname;
+  if (p.indexOf(APP) === 0) {
+    location.replace(APP + '#/' + p.slice(APP.length).replace(/^\/+/, '') + location.search);
+  } else {
+    location.replace(APP);
+  }
+</script>
+<title>ClubScore Live</title>

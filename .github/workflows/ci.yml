@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [arena/**]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit
+      - name: boundaries
+        run: npm run lint
+      - name: typecheck
+        run: npm run typecheck
+      - name: unit tests (engine ≥90% lines gate в vitest.config)
+        run: npm test
+      - name: contracts (routes/i18n/contrast)
+        run: |
+          node scripts/check-routes.mjs
+          node scripts/check-i18n.mjs
+          node scripts/check-contrast.mjs
+      - name: build 15 apps
+        run: npm run build
+      - name: bundle budget
+        run: npm run check:bundle
+      - name: 144-player simulation budget
+        run: npx tsx scripts/sim-tournament.mjs 144
+      - uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: artifacts/build-report.json
+          if-no-files-found: ignore

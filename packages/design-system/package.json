@@ -1,0 +1,11 @@
+{
+  "name": "@csl/design-system",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live design-system: React-примитивы поверх токенов, ds.css, адаптивные паттерны",
+  "exports": {
+    ".": "./src/index.ts",
+    "./ds.css": "./src/ds.css"
+  }
+}

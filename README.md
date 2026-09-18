@@ -45,3 +45,46 @@ firebase deploy
 Создай первый турнир в консоли Firebase — сайт сам переключится на живые данные.
 
 > ⚠️ Test mode базы живёт 30 дней. Перед турном поставь боевые Rules из `docs/DATA_MODEL.md`.
+
+---
+
+# ClubScore Live — новая архитектура (фазы 1–4, монорепо)
+
+Легаси-статика выше оставлена как история. Актуальный контур — npm-workspaces монорепо с 15 сборками **3 варианта × 5 дизайнов** (VARIANTS.md, DESIGNS.md).
+
+## Структура
+```
+packages/
+  core            — доменная модель, zod-схемы, i18n (ru/en), правила конверта действий
+  scoring-engine  — WHS-гандикапы, 10 форматов, countback, флайты (тестов ≥60, порог 90%)
+  sync            — журнал действий, идемпотентность, timestamp→роль резолвер, SSE-транспорты
+  design-system   — React-примитивы + ds.css (тач ≥48px, ARIA)
+  tokens          — 5 дизайн-тем × {light,dark,sun}; CSS-генерация scripts/build-themes.mjs
+  testing         — детерминированные фикстуры (mulberry32)
+  app-ui          — экраны/роуты/паттерны IA; фичи вариантов — VARIANT_FEATURES
+apps/
+  server          — SSE-скоринг-сервер (node:sqlite журнал, ADR-0003)
+  variant-{a-core,b-tournament,c-experimental}/design-{1..5}  — 15 приложений
+scripts/          — gen-apps, build-all-apps, check-{boundaries,routes,i18n,bundle,contrast}, sim-tournament
+```
+
+## Команды
+```bash
+npm ci --no-audit
+npm test && npm run typecheck && npm run lint
+npm run dev --workspace @csl/app-a-d1     # любое из 15 приложений
+npm run build                              # токены + 15 сборок
+npm run check:all                          # границы+типы+тесты+контраст
+node scripts/check-i18n.mjs && node scripts/check-routes.mjs && node scripts/check-bundle.mjs
+npx tsx scripts/sim-tournament.mjs 144     # нагрузочная проверка движка
+npm run server                             # SSE-сервер (PORT=8787, CSL_DB=…)
+```
+
+## Live-режимы
+- **GitHub Pages** (deploy-pages.yml): статические сборки /<v>-d<d>/, DemoTransport — «сервер в браузере» (D8), счёт переживает перезагрузку (localStorage-журнал).
+- **Сервер**: `npm run server` + RemoteTransport — SSE-стрим с Last-Event-ID докачкой, журнал sqlite (идемпотентные вставки, аудит).
+
+## Процессы
+- CI: `.github/workflows/ci.yml` (boundaries, types, unit, контракты, bundle budget, симуляция 144 игроков).
+- E2E: `.github/workflows/e2e.yml` — playwright против приоритетных сборок (SMART-цель «3/5 с первого раза»).
+- Качество/решения: docs/adr/ADR-0003 (sqlite), CONTRIBUTING.md, 16 спек в корне (фаза 0, scope freeze).

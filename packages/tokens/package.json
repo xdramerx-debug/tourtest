@@ -1,0 +1,12 @@
+{
+  "name": "@csl/tokens",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live design tokens: 5 тем × режимы (light/dark/sun), CSS-генерация",
+  "exports": {
+    ".": "./src/index.ts",
+    "./dist/*": "./dist/*",
+    "./fonts/*": "./dist/fonts/*"
+  }
+}
