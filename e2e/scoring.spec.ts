@@ -8,6 +8,18 @@ import { test, expect } from '@playwright/test';
 
 const BASE = process.env.CSL_E2E_SCORING ?? 'http://localhost:4030/';
 
+const pageErrors: string[] = [];
+test.beforeEach(async ({ page }) => {
+  pageErrors.length = 0;
+  page.on('pageerror', (e) => pageErrors.push(`pageerror: ${String(e.stack ?? e).slice(0, 600)}`));
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    if (/Failed to load resource/.test(m.text()) && /\/t\//.test(m.location().url)) return;
+    if (/Failed to load resource.*404/.test(m.text())) return; // redirect-трюк D9
+    pageErrors.push(`console: ${m.text().slice(0, 300)} @${m.location().url}`);
+  });
+});
+
 async function designOf(page: import('@playwright/test').Page): Promise<string> {
   return page.evaluate(() => document.documentElement.dataset.design ?? '');
 }
@@ -70,7 +82,14 @@ test.describe('горячие шаблоны v2 (apps/scoring)', () => {
     await expect(page).toHaveURL(/play/);
     // вводим счёт 5 на первой лунке — большая цифра пада подтверждает запись
     await page.getByRole('button', { name: /^5$/ }).first().click();
-    await expect(page.locator('.ds-sc__bignum').first()).toHaveText(/^5$/);
+    await page.waitForTimeout(600);
+    expect.soft(pageErrors, 'JS-ошибки на play').toEqual([]);
+    const padState = await page.evaluate(() => ({
+      activeKeys: [...document.querySelectorAll('.ds-pad__key.is-active')].map((x) => x.textContent),
+      bignum: document.querySelector('.ds-sc__bignum')?.textContent,
+      session: localStorage.getItem('csl.session'),
+    }));
+    expect(padState.bignum, JSON.stringify({ padState, pageErrors })).toBe('5');
     // два переключения подряд (Alt+T цикл)
     const before = await designOf(page);
     await page.keyboard.down('Alt'); await page.keyboard.press('t'); await page.keyboard.up('Alt');
