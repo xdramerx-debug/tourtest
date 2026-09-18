@@ -10,8 +10,13 @@ import { test, expect } from '@playwright/test';
 const pageErrors: string[] = [];
 test.beforeEach(async ({ page }) => {
   pageErrors.length = 0;
-  page.on('pageerror', (e) => pageErrors.push(`pageerror: ${String(e).slice(0, 300)}`));
-  page.on('console', (m) => { if (m.type() === 'error') pageErrors.push(`console: ${m.text().slice(0, 300)}`); });
+  page.on('pageerror', (e) => pageErrors.push(`pageerror: ${String(e.stack ?? e).slice(0, 900)}`));
+  page.on('console', (m) => {
+    if (m.type() !== 'error') return;
+    // шум 404.html redirect-трюка (D9): deep-link документ логируется как failed-ресурс
+    if (/Failed to load resource/.test(m.text()) && /\/t\//.test(m.location().url)) return;
+    pageErrors.push(`console: ${m.text().slice(0, 300)} @${m.location().url}`);
+  });
 });
 
 test.describe('критические пути F0–F2', () => {
