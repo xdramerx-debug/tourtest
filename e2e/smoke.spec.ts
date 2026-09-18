@@ -24,7 +24,7 @@ test.describe('критические пути F0–F2', () => {
 
   test('join по коду → лобби → ввод счёта', async ({ page }) => {
     await page.goto('./join');
-    await page.getByLabel(/код турнира/i).fill('DUBRO26');
+    await page.getByLabel(/код турнира/i).fill('DUBRO6');
     await page.getByLabel(/имя и фамилия/i).fill('Тестовый Игрок');
     await page.getByRole('switch').first().click();
     await page.getByRole('button', { name: /войти в турнир/i }).click();

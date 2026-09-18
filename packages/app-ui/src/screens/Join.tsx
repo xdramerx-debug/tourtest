@@ -45,14 +45,17 @@ export function JoinScreen() {
   const submit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!info) { setError(t('join.codeError')); return; }
-    // правило «имя как награда»: ≤40 символов, без эмодзи — zod (core/schemas)
+    // правило «имя как награда»: ≤40 символов, zod-контракт core/schemas (IA §12)
     const parsed = joinFormSchema.safeParse({
-      name, code: info.id.slice(0, 6).padEnd(6, '0'), consentTerms: terms, consentPhotos: photos, role: asMarker ? 'marker' : 'player',
+      code: code.trim().toUpperCase(),
+      name, hi: 18, teeSetKey: 'mens',
+      acceptRules: terms, acceptPhoto: photos, asMarker,
     });
     if (!parsed.success) {
-      const issue = parsed.error.issues[0];
-      setError(issue?.path[0] === 'name' ? t('join.nameError')
-        : issue?.path[0] === 'consentTerms' ? t('join.consentError') : t('join.error'));
+      const path = String(parsed.error.issues[0]?.path[0] ?? '');
+      setError(path === 'name' ? t('join.nameError')
+        : path === 'acceptRules' ? t('join.consentError')
+        : path === 'code' ? t('join.codeError') : t('join.error'));
       return;
     }
     try {
