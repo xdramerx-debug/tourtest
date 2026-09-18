@@ -81,15 +81,19 @@ test.describe('горячие шаблоны v2 (apps/scoring)', () => {
     await page.getByRole('link', { name: /начать раунд/i }).click();
     await expect(page).toHaveURL(/play/);
     // вводим счёт 5 на первой лунке — большая цифра пада подтверждает запись
-    await page.getByRole('button', { name: /^5$/ }).first().click();
+    const key5 = page.getByRole('button', { name: /^5$/ }).first();
+    const keyHtml = await key5.evaluate((n) => n.outerHTML.slice(0, 120));
+    await key5.click();
     await page.waitForTimeout(600);
     expect.soft(pageErrors, 'JS-ошибки на play').toEqual([]);
     const padState = await page.evaluate(() => ({
       activeKeys: [...document.querySelectorAll('.ds-pad__key.is-active')].map((x) => x.textContent),
       bignum: document.querySelector('.ds-sc__bignum')?.textContent,
-      session: localStorage.getItem('csl.session'),
+      storage: Object.keys(localStorage).filter((k) => k.includes('csl')).map((k) => `${k}=${localStorage.getItem(k)?.slice(0, 60)}`),
+      url: location.href,
+      holeBlocks: document.querySelectorAll('.ds-sc__hole').length,
     }));
-    expect(padState.bignum, JSON.stringify({ padState, pageErrors })).toBe('5');
+    expect(padState.bignum, JSON.stringify({ padState, keyHtml, pageErrors }, null, 1)).toBe('5');
     // два переключения подряд (Alt+T цикл)
     const before = await designOf(page);
     await page.keyboard.down('Alt'); await page.keyboard.press('t'); await page.keyboard.up('Alt');
