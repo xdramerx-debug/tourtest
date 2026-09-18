@@ -97,8 +97,10 @@ export class Sender {
     this.delay = opts.baseDelayMs ?? 1000;
   }
 
-  private get setT() { return this.opts.setTimeoutFn ?? setTimeout; }
-  private get clearT() { return this.opts.clearTimeoutFn ?? clearTimeout; }
+  // Глобальные timer-функции должны зваться с правильным receiver (иначе Chromium:
+  // 'Illegal invocation'). Обёртки сохраняют подмену таймеров в тестах.
+  private get setT() { return this.opts.setTimeoutFn ?? ((fn: () => void, ms: number) => setTimeout(fn, ms)); }
+  private get clearT() { return this.opts.clearTimeoutFn ?? ((h: ReturnType<typeof setTimeout>) => clearTimeout(h)); }
 
   start() { this.stopped = false; void this.kick(); }
   stop() { this.stopped = true; if (this.timer) this.clearT(this.timer); this.timer = null; }
