@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, NavLink, Outlet, useLocation } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import i18next from 'i18next';
 import { Icon, IconButton } from '@csl/design-system';
-import { themeById, MODES, type Mode } from '@csl/tokens';
+import { themeById, MODES, type DesignId, type Mode } from '@csl/tokens';
 import { OptionalConnBadge, useMaybeStore } from './store-context';
 import { useApp } from './root';
 import { demoTournamentList } from './config';
+import { DESIGN_IDS } from './theme-switch';
 
 export function AppLayout() {
   const { t } = useTranslation();
@@ -45,6 +46,7 @@ export function AppLayout() {
         </nav>
         <div className="ds-top__spacer" />
         <OptionalConnBadge />
+        {config.themeSwitch ? <ThemePicker /> : null}
         <IconButton aria-label={`mode: ${nextMode}`} title={`${t('mode.sun')}/${t('mode.dark')}`} onClick={() => setMode(nextMode)}>
           <Icon name={modeIcon} />
         </IconButton>
@@ -85,6 +87,69 @@ function TabItem({ to, icon, label, active }: { to: string; icon: 'home' | 'live
       <Icon name={icon} size={22} />
       <span>{label}</span>
     </Link>
+  );
+}
+
+/** v2: пикер пяти премиум-шаблонов — переключение на лету (USER_FLOWS F0+v2). */
+function ThemePicker() {
+  const { t } = useTranslation();
+  const { design, setDesign } = useApp();
+  const [open, setOpen] = useState(false);
+  const boxRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e: MouseEvent) => {
+      if (boxRef.current && !boxRef.current.contains(e.target as Node)) setOpen(false);
+    };
+    const onEsc = (e: KeyboardEvent) => { if (e.key === 'Escape') setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onEsc);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onEsc);
+    };
+  }, [open]);
+
+  return (
+    <div className="ds-theme" ref={boxRef}>
+      <button
+        type="button"
+        className="ds-theme__btn"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-label={t('themes.picker')}
+        title={`${t('nav.themes')} · ${t('themes.hotkey')}`}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="ds-theme__swatches" aria-hidden="true">
+          {DESIGN_IDS.map((id) => (
+            <span key={id} className={`ds-theme__dot ds-theme__dot--${id} ${id === design ? 'is-active' : ''}`} />
+          ))}
+        </span>
+        <span className="ds-theme__label">{t(`themes.names.${design}`)}</span>
+        <Icon name="settings" size={16} />
+      </button>
+      {open ? (
+        <div className="ds-theme__menu" role="listbox" aria-label={t('themes.picker')}>
+          {DESIGN_IDS.map((id: DesignId) => (
+            <button
+              key={id}
+              type="button"
+              role="option"
+              aria-selected={id === design}
+              className={`ds-theme__item ${id === design ? 'is-active' : ''}`}
+              onClick={() => { setDesign(id); setOpen(false); }}
+            >
+              <span className={`ds-theme__dot ds-theme__dot--${id}`} aria-hidden="true" />
+              <span className="ds-theme__itemname">{t(`themes.names.${id}`)}</span>
+              <kbd className="ds-theme__kbd" aria-hidden="true">Alt+{id}</kbd>
+            </button>
+          ))}
+          <div className="ds-theme__hint ds-muted">{t('themes.hotkey')}</div>
+        </div>
+      ) : null}
+    </div>
   );
 }
 

@@ -52,6 +52,8 @@ function renderWithStore(node: React.ReactNode) {
     setMode: () => {},
     config: { variant: 'b' as const, design: '1' as const },
     features: VARIANT_FEATURES.b,
+    design: '1' as const,
+    setDesign: () => {},
   };
   return renderToStaticMarkup(
     <I18nextProvider i18n={i18n}>
@@ -98,6 +100,7 @@ describe('экраны на живом demo-store (диагностика)', () 
       <I18nextProvider i18n={i18n}>
         <AppContext.Provider value={{
           mode: 'light', setMode: () => {}, config: { variant: 'b', design: '1' }, features: VARIANT_FEATURES.b,
+          design: '1' as const, setDesign: () => {},
         }}>
           <MemoryRouter initialEntries={['/t/t-open/board']}>
             <TournamentProvider info={{

@@ -220,5 +220,15 @@
   "admin.editTitle": "Score editing",
   "admin.clubName": "Club name",
   "admin.accent": "Accent colour",
-  "admin.cVariantOnly": "Club branding is available in variant C."
+  "admin.cVariantOnly": "Club branding is available in variant C.",
+  "nav.themes": "Template",
+  "themes.picker": "Interface template picker",
+  "themes.current": "Current template",
+  "themes.hotkey": "Alt+T — next, Alt+1..5 — choose",
+  "themes.switched": "Template changed: {name}",
+  "themes.names.1": "Classic Country Club",
+  "themes.names.2": "Broadcast / Majors",
+  "themes.names.3": "Modern Sport",
+  "themes.names.4": "Precision",
+  "themes.names.5": "Night Round"
 }

@@ -1,10 +1,13 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import {
   createHashRouter, RouterProvider, Outlet, Navigate, useParams,
 } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n } from '@csl/core';
 import { applyTheme, initTheme, type DesignId, type Mode } from '@csl/tokens';
+import {
+  hotkeyDesign, nextDesign, persistDesign, resolveInitialDesign, syncUrlDesign,
+} from './theme-switch';
 import { TournamentProvider } from './store-context';
 import { demoTournamentList, MODE_ORDER, VARIANT_FEATURES, type AppConfig, type DemoTournamentInfo, type VariantFeatures } from './config';
 import { extraTournaments } from './screens/admin/wizard-store';
@@ -25,7 +28,12 @@ import { AdminCourses } from './screens/admin/AdminCourses';
 import { AdminPlayers, AdminClub, AdminAudit, AdminTournaments } from './screens/admin/AdminMisc';
 import { registerSW } from './sw';
 
-interface ThemeCtx { mode: Mode; setMode: (m: Mode) => void; config: AppConfig; features: VariantFeatures }
+interface ThemeCtx {
+  mode: Mode; setMode: (m: Mode) => void;
+  config: AppConfig; features: VariantFeatures;
+  /** v2: текущий дизайн-шаблон (реактивен!) и смена на лету */
+  design: DesignId; setDesign: (d: DesignId) => void;
+}
 const Ctx = createContext<ThemeCtx>(null as unknown as ThemeCtx);
 export const AppContext = Ctx;
 export const useApp = () => useContext(Ctx);
@@ -47,20 +55,68 @@ function WithTournament({ children }: { children: React.ReactNode }) {
 }
 
 export function AppRoot({ config }: { config: AppConfig }) {
-  const [mode, setModeState] = useState<Mode>(() => initTheme(config.design));
+  // v2: дизайн — реактивное состояние (горячее переключение без перезагрузки);
+  // ?theme=N → localStorage → системная тёмная тема → config.design (см. theme-switch.ts)
+  const [design, setDesignState] = useState<DesignId>(() => {
+    if (!config.themeSwitch || typeof window === 'undefined') return config.design;
+    const res = resolveInitialDesign({
+      search: window.location.search,
+      storage: localStorage,
+      systemDark: window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? false,
+      defaultDesign: config.design,
+    });
+    if (res.source === 'url') persistDesign(res.design); // пришли по ссылке — зафиксировать как предпочтение
+    return res.design;
+  });
+  const [mode, setModeState] = useState<Mode>(() => initTheme(design));
   const [i18n] = useState(() => initI18n('ru'));
   const features = VARIANT_FEATURES[config.variant];
 
   useEffect(() => { registerSW(); }, []);
   useEffect(() => { applyBranding(config); }, [config]);
 
+  const designRef = useRef(design);
+  designRef.current = design;
+
+  const setDesign = (d: DesignId) => {
+    if (d === designRef.current) return;
+    setDesignState(d);
+    persistDesign(d);
+    syncUrlDesign(d);
+    applyTheme(d, modeRef.current);
+  };
+
+  const modeRef = useRef(mode);
+  modeRef.current = mode;
   const setMode = (m: Mode) => {
     setModeState(m);
-    applyTheme(config.design, m);
+    applyTheme(designRef.current, m);
     try { localStorage.setItem('csl.mode', m); } catch { /* ignore */ }
   };
 
-  const ctx = useMemo<ThemeCtx>(() => ({ mode, setMode, config, features }), [mode, config, features]);
+  // v2: горячие клавиши Alt+T (цикл) и Alt+1..5 (прямой выбор); не перехватываем в полях ввода
+  useEffect(() => {
+    if (!config.themeSwitch) return;
+    const onKey = (e: KeyboardEvent) => {
+      const el = e.target as HTMLElement | null;
+      if (el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable)) return;
+      const r = hotkeyDesign(e.key, e.altKey);
+      if (!r) return;
+      e.preventDefault();
+      setDesign(r === 'cycle' ? nextDesign(designRef.current) : r);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [config.themeSwitch]);
+
+  const ctx = useMemo<ThemeCtx>(() => ({
+    mode, setMode, features, design, setDesign,
+    // потребители читают themeById[config.design] — подменяем реактивной версией (экраны не правим)
+    config: { ...config, design },
+  }), [mode, features, design, config]);
+
+  // SSR (тесты/рендер-статистика): контекст должен быть доступен и вне RouterProvider
+  void i18n;
 
   // HashRouter (D9): статический хостинг с произвольным префиксом — относительный
   // base './' не ломает загрузку модулей; deep-link на чистый путь переводится в hash из 404.html.

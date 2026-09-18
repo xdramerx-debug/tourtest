@@ -18,7 +18,7 @@ jobs:
           cache: npm
       - run: npm ci --no-audit
       - run: npx playwright install --with-deps chromium
-      - name: build priority builds (A×1, A×3, B×2, C×5 + A×2)
+      - name: build priority builds (A×1, A×3, B×2, C×5 + A×2) + scoring v2
         run: |
           npm run build:tokens
           node scripts/build-all-apps.mjs variant-a-core/design-1
@@ -26,12 +26,19 @@ jobs:
           node scripts/build-all-apps.mjs variant-a-core/design-3
           node scripts/build-all-apps.mjs variant-b-tournament/design-2
           node scripts/build-all-apps.mjs variant-c-experimental/design-5
+          npm run build -w @csl/scoring-app
       - name: serve
-        run: (node scripts/serve-pages.mjs apps/variant-a-core/design-1/dist 4020 &) && sleep 1 && curl -fsS localhost:4020/ | grep -qi clubscore
+        run: |
+          (node scripts/serve-pages.mjs apps/variant-a-core/design-1/dist 4020 &)
+          (node scripts/serve-pages.mjs apps/scoring/dist 4030 &)
+          sleep 1
+          curl -fsS localhost:4020/ | grep -qi clubscore
+          curl -fsS localhost:4030/ | grep -qi clubscore
       - name: playwright
         run: npx playwright test --reporter=github,list
         env:
           CSL_E2E_BASE: http://localhost:4020/
+          CSL_E2E_SCORING: http://localhost:4030/
       - uses: actions/upload-artifact@v4
         if: always()
         with:

@@ -4,9 +4,12 @@ export type VariantId = 'a' | 'b' | 'c';
 
 export interface AppConfig {
   variant: VariantId;
+  /** начальная тема по умолчанию (если ни URL, ни storage, ни система не задали) */
   design: DesignId;
   /** имя турнира/клуба по умолчанию для витрины-демо */
   clubName?: string;
+  /** v2: горячее переключение 5 шаблонов (UI-пикер, Alt+T/Alt+1..5, ?theme=, персист) */
+  themeSwitch?: boolean;
 }
 
 /** Фича-матрица вариантов (VARIANTS.md): приложение выбирает состав роутов, а не if-флаги в пакетах. */

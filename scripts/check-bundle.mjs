@@ -14,10 +14,12 @@ const CSS_BUDGET = 60 * 1024;
 const rows = [];
 let fail = 0;
 
-for (const v of readdirSync(join(root, 'apps')).filter((d) => d.startsWith('variant-'))) {
-  for (const d of readdirSync(join(root, 'apps', v)).filter((x) => x.startsWith('design-'))) {
-    const dist = join(root, 'apps', v, d, 'dist', 'assets');
-    if (!existsSync(dist)) { rows.push({ app: `${v}/${d}`, err: 'no dist — run build' }); fail += 1; continue; }
+for (const v of readdirSync(join(root, 'apps')).filter((d) => d.startsWith('variant-') || d === 'scoring')) {
+  const subs = v === 'scoring' ? ['.'] : readdirSync(join(root, 'apps', v)).filter((x) => x.startsWith('design-'));
+  for (const d of subs) {
+    const dist = join(root, "apps", v, d, "dist", "assets");
+    const name = d === '.' ? v : `${v}/${d}`;
+    if (!existsSync(dist)) { rows.push({ app: name, err: 'no dist — run build' }); fail += 1; continue; }
     let js = 0, css = 0;
     for (const f of readdirSync(dist)) {
       if (/\.js$/.test(f) && !f.includes('import-wrapper')) js += gzipSync(readFileSync(join(dist, f))).length;
@@ -25,7 +27,7 @@ for (const v of readdirSync(join(root, 'apps')).filter((d) => d.startsWith('vari
     }
     const ok = js <= JS_BUDGET && css <= CSS_BUDGET;
     if (!ok) fail += 1;
-    rows.push({ app: `${v}/${d}`, jsGzipKB: Math.round(js / 1024), cssGzipKB: Math.round(css / 1024), ok });
+    rows.push({ app: name, jsGzipKB: Math.round(js / 1024), cssGzipKB: Math.round(css / 1024), ok });
   }
 }
 console.table(rows);
