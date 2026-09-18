@@ -24,8 +24,8 @@ npm run server                  # reference SSE-сервер (node:sqlite), PORT
 ## Проверки перед PR
 `check:all` + `node scripts/check-i18n.mjs` + `node scripts/check-routes.mjs` + `npm run build` должны быть зелёными. CI (ci.yml) повторяет всё + bundle budget + симуляция 144 игроков; e2e.yml — playwright против приоритетных сборок.
 
-## CI-воркфлоу (одноразовая установка владельцем репо)
-Шаблоны лежат в `docs/ci-templates/` (ci.yml, e2e.yml, deploy-pages.yml). Владельцу репо (аккаунт с правом `workflows`) нужно один раз скопировать их в `.github/workflows/` — например через веб-интерфейс GitHub (Add file → upload). Бот Arena не может пушить workflow-файлы из-за ограничения GitHub App permissions — это осознанное разделение прав.
+## CI-воркфлоу
+Живут в `.github/workflows/` (ci.yml, e2e.yml, deploy-pages.yml). Изменение workflow-файлов требует permission `workflows` у пушащего аккаунта/App'а — история: первоначально шаблоны лежали в `docs/ci-templates/`, после выдачи пермита перенесены на каноническое место.
 
 ## Что нельзя коммитить
 node_modules, dist, .env, секреты, реальные персональные данные игроков (ФЗ-152/NFR §6 — в репо только фикстуры). Журналы sqlite сервера (`*.db`) тоже.

@@ -85,6 +85,6 @@ npm run server                             # SSE-сервер (PORT=8787, CSL_DB
 - **Сервер**: `npm run server` + RemoteTransport — SSE-стрим с Last-Event-ID докачкой, журнал sqlite (идемпотентные вставки, аудит).
 
 ## Процессы
-- CI: `docs/ci-templates/ci.yml (см. CONTRIBUTING → CI-воркфлоу)` (boundaries, types, unit, контракты, bundle budget, симуляция 144 игроков).
-- E2E: `docs/ci-templates/e2e.yml` — playwright против приоритетных сборок (SMART-цель «3/5 с первого раза»).
+- CI: `.github/workflows/ci.yml` (boundaries, types, unit, контракты, bundle budget, симуляция 144 игроков).
+- E2E: `.github/workflows/e2e.yml` — playwright против приоритетных сборок (SMART-цель «3/5 с первого раза»).
 - Качество/решения: docs/adr/ADR-0003 (sqlite), CONTRIBUTING.md, 16 спек в корне (фаза 0, scope freeze).
