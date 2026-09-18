@@ -75,8 +75,9 @@ describe('theme-switch (ARCHITECTURE §0 v2)', () => {
         DESIGN_IDS.map((id) => React.createElement('span', { key: id }, themeById[id].name)),
       ),
     );
-    expect(html).toContain('Classic');
+    expect(html).toContain('dir="rtl"');
     expect(DESIGN_IDS.every((id) => html.includes(themeById[id].name))).toBe(true);
+    // отображаемые имена шаблонов — по i18n-ключам themes.names.N (ru/en словари)
   });
 
   describe('persistDesign', () => {
