@@ -34,11 +34,23 @@ test.describe('горячие шаблоны v2 (apps/scoring)', () => {
   });
 
   test('Alt+T цикл и Alt+1..5 прямой выбор', async ({ page }) => {
-    await page.evaluate(() => { /* noop */ });
     await page.goto(`${BASE}`);
+    // диагностика: реальные keydown (app обработчики могут не сработать только если события не доходят)
+    await page.evaluate(() => {
+      (window as unknown as { __keys: string[] }).__keys = [];
+      window.addEventListener('keydown', (e) => {
+        (window as unknown as { __keys: string[] }).__keys.push(`${(e as KeyboardEvent).key}/${(e as KeyboardEvent).altKey}`);
+      }, true);
+    });
     await page.keyboard.down('Alt');
     await page.keyboard.press('3');
     await page.keyboard.up('Alt');
+    const keys = await page.evaluate(() => (window as unknown as { __keys: string[] }).__keys.join(','));
+    expect.soft(keys, 'ключи дошли до страницы').toContain('3/true');
+    if (!keys.includes('3/true')) {
+      // headless-бывает, что модификатор не ставится — проверяем сам обработчик синтетическим событием
+      await page.evaluate(() => window.dispatchEvent(new KeyboardEvent('keydown', { key: '3', altKey: true, bubbles: true })));
+    }
     await expect.poll(() => designOf(page)).toBe('3');
     await page.keyboard.down('Alt');
     await page.keyboard.press('t');
@@ -56,22 +68,18 @@ test.describe('горячие шаблоны v2 (apps/scoring)', () => {
     await expect(page).toHaveURL(/#\/t\//);
     await page.getByRole('link', { name: /начать раунд/i }).click();
     await expect(page).toHaveURL(/play/);
-    // вводим счёт 5 на первой лунке
+    // вводим счёт 5 на первой лунке — большая цифра пада подтверждает запись
     await page.getByRole('button', { name: /^5$/ }).first().click();
-    const scoreBefore = await page.evaluate(() => localStorage.getItem('csl.scoresBackup'));
-    void scoreBefore;
+    await expect(page.locator('.ds-sc__bignum').first()).toHaveText(/^5$/);
     // два переключения подряд (Alt+T цикл)
     const before = await designOf(page);
     await page.keyboard.down('Alt'); await page.keyboard.press('t'); await page.keyboard.up('Alt');
     await page.keyboard.down('Alt'); await page.keyboard.press('t'); await page.keyboard.up('Alt');
     const after2 = await designOf(page);
     expect(after2).not.toBe(before);
-    // введённое значение не потерялось (буфер пада счёта виден на экране)
-    await expect(page.getByRole('button', { name: /^5$/ }).first()).toBeVisible({ timeout: 5000 });
-    const cell = await page.evaluate(() => {
-      const raw = localStorage.getItem('csl.session');
-      return !!raw;
-    });
-    expect(cell).toBe(true);
+    // введённое значение не потерялось ни в UI, ни в данных
+    await expect(page.locator('.ds-sc__bignum').first()).toHaveText(/^5$/, { timeout: 5000 });
+    const session = await page.evaluate(() => localStorage.getItem('csl.session'));
+    expect(session, 'join-сессия сохранена при переключении тем').toBeTruthy();
   });
 });
