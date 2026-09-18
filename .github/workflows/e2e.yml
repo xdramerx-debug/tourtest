@@ -29,12 +29,14 @@ jobs:
       - name: serve
         run: (node scripts/serve-pages.mjs apps/variant-a-core/design-1/dist 4020 &) && sleep 1 && curl -fsS localhost:4020/ | grep -qi clubscore
       - name: playwright
-        run: npx playwright test
+        run: npx playwright test --reporter=github,list
         env:
           CSL_E2E_BASE: http://localhost:4020/
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: always()
         with:
-          name: playwright-report
-          path: playwright-report
+          name: playwright-output
+          path: |
+            playwright-report
+            test-results
           if-no-files-found: ignore
