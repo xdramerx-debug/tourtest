@@ -5,7 +5,7 @@ import { MemoryRouter } from 'react-router-dom';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n } from '@csl/core';
 import { createTournamentStore, DemoTransport } from '@csl/sync';
-import { TourneyStoreContext } from '../src/store-context';
+import { TourneyStoreContext, TournamentProvider } from '../src/store-context';
 import { AppContext } from '../src/root';
 import { VARIANT_FEATURES } from '../src/config';
 import { BoardScreen } from '../src/screens/Board';
@@ -90,5 +90,27 @@ describe('экраны на живом demo-store (диагностика)', () 
   });
   it('AdminLayout рендерится', () => {
     expect(renderWithStore(<AdminLayout />).length).toBeGreaterThan(50);
+  });
+  it('TournamentProvider: первый рендер не роняет children (регрессия e2e)', () => {
+    // До создания store провайдер обязан дать skeleton, а НЕ голых children —
+    // иначе useTourneyStore бросает и белый экран (падало /t/* и /admin в проде).
+    const html = renderToStaticMarkup(
+      <I18nextProvider i18n={i18n}>
+        <AppContext.Provider value={{
+          mode: 'light', setMode: () => {}, config: { variant: 'b', design: '1' }, features: VARIANT_FEATURES.b,
+        }}>
+          <MemoryRouter initialEntries={['/t/t-open/board']}>
+            <TournamentProvider info={{
+              id: 't-open', format: 'stroke', name: { ru: 'T', en: 'T' }, status: 'live',
+              players: 8, flights: 1, teams: 0, rounds: 1, startProgress: 0,
+            }}>
+              <BoardScreen />
+            </TournamentProvider>
+          </MemoryRouter>
+        </AppContext.Provider>
+      </I18nextProvider>,
+    );
+    expect(html).toContain('ds-skel');
+    expect(html).not.toContain('отсутствует');
   });
 });

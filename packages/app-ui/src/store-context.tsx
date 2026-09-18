@@ -29,7 +29,17 @@ export function TournamentProvider({ info, children }: { info: DemoTournamentInf
     return () => { st.destroy(); transport.destroy(); };
   }, [info?.id]);
 
-  if (!store) return <>{children}</>;
+  // Регрессия (поймана e2e): пока store строится в useEffect, рендерить children
+  // без провайдера НЕЛЬЗЯ — useTourneyStore бросит 'TournamentProvider отсутствует'
+  // и уронит всё приложение (белый экран на всех /t/* и /admin).
+  if (!store) {
+    return (
+      <div className="ds-sc" aria-busy="true">
+        <div className="ds-skel" style={{ height: 48 }} />
+        <div className="ds-skel" style={{ height: 320 }} />
+      </div>
+    );
+  }
   return <StoreContext.Provider value={store}>{children}</StoreContext.Provider>;
 }
 
