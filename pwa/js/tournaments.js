@@ -35,16 +35,16 @@
     var wrap = document.getElementById('tlist');
     var items = Object.entries(window.__tours || {});
     if (!items.length) { wrap.innerHTML = '<div class="card">Турниров пока нет. Создайте их в <a href="admin.html">админке</a>.</div>'; return; }
-    wrap.innerHTML = items.map(function (t) {
-      var tr = t[1];
+    wrap.innerHTML = items.map(function (pair) {
+      var tr = pair[1];
       var n = Object.keys(tr.players || {}).length;
       return '<div class="card livecard">' +
-        '<div class="card__head"><span class="card__title">' + window.Util.escapeHtml(tr.name || t[0]) + '</span>' +
+        '<div class="card__head"><span class="card__title">' + window.Util.escapeHtml(tr.name || pair[0]) + '</span>' +
         '<span class="badge">' + (tr.status === 'live' ? '· LIVE' : tr.status === 'done' ? t('round.status.done') : tr.status || '—') + '</span></div>' +
         '<small style="color:var(--muted)">' + (tr.date || '') + ' · ' + t('format.' + (tr.format || 'stroke')) + ' · ' + n + ' уч.</small>' +
         (tr.protocolId ? ' <span class="badge badge--ok">протокол опубликован</span>' : '') +
-        '<div class="btnrow"><a class="btn" href="tournaments.html?tournament=' + t[0] + '">Открыть</a>' +
-        (tr.status === 'live' ? ' <a class="btn btn--ghost" href="tv.html?tournament=' + t[0] + '">📺 TV</a>' : '') + '</div>' +
+        '<div class="btnrow"><a class="btn" href="tournaments.html?tournament=' + pair[0] + '">Открыть</a>' +
+        (tr.status === 'live' ? ' <a class="btn btn--ghost" href="tv.html?tournament=' + pair[0] + '">📺 TV</a>' : '') + '</div>' +
         '</div>';
     }).join('');
   }
