@@ -46,6 +46,8 @@ jobs:
             done
           done
           cp scripts/pages-index.html dist-pages/variants/index.html
+          # клон «Пестово Live Scoring» (v3, vanilla PWA) → /pwa/
+          cp -r pwa dist-pages/pwa
       - uses: actions/upload-pages-artifact@v3
         with:
           path: dist-pages
