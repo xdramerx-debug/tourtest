@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Помощник клуба · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.1.0">
+  <!-- pdf.js из CDN: деградация ниже, если CDN недоступен (экстрактивный ответ без PDF-доков) -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" defer></script>
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Помощник клуба</h1><p class="desc">Офлайн-ответы по правилам гольфа и книге поля (BM25, без сервера). Загрузите PDF правил — он тоже попадёт в индекс.</p></div>
+
+  <div class="card">
+    <label class="field" style="display:inline-block;"><span>Правила (PDF)</span>
+      <input type="file" id="pdf" accept="application/pdf"></label>
+    <small id="pdfStatus" style="color:var(--muted);margin-left:10px;">Пока индекс: встроенные документы клуба</small>
+    <div class="row" style="margin-top:12px;">
+      <input id="q" type="text" placeholder="Спросите: сколько минут искать мяч? что с красной ставкой?">
+      <button class="btn btn--accent" id="ask">Спросить</button>
+    </div>
+    <div id="answers" style="margin-top:12px;"></div>
+  </div>
+
+  <div class="card" style="margin-top:14px;"><h3>Быстрые темы</h3><div class="btnrow" id="chips" style="flex-wrap:wrap;"></div></div>
+</main>
+<script src="js/config.js?v=3.1.0"></script>
+<script src="js/i18n.js?v=3.1.0"></script>
+<script src="js/engine/assistant.js?v=3.1.0"></script>
+<script src="js/util.js?v=3.1.0"></script>
+<script src="js/ui.js?v=3.1.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('assistant');
+  var C = window.APP_CONFIG;
+
+  // встроенный корпус (этап: без сети): книга поля голыми словами + ключевые правила
+  var seed = [
+    { id: 'guide', title: 'Книга поля «Пестово»', text: holeText() },
+    { id: 'rules-flavor', title: 'Быстрые правила клуба', text:
+      'Ищите мяч не более трёх минут, после чего объявите мяч потерянным и продолжайте по правилу 18. ' +
+      'Готовый гольф: играйте, когда готовы, а не когда «ваша очередь», если это безопасно. ' +
+      'Балки и дивоты восстанавливайте сразу после удара. ' +
+      'Pace-контроль: планируемое время прохождения лунок показано в приложении; при отставании больше 15% включайте режим ready-golf. ' +
+      'Подряд два патта длиннее гимми-радиуса замедляют группу — завершайте лунку быстрее. ' +
+      'Красная пеналь-зона даёт право на дроп с боковым relief в два клюшки с одним штрафным ударом. ' +
+      'Миллиган (gimme) в турнирах не применяется; все патты должны быть доиграны до лунки. ' +
+      'Раунд можно приостановить по сигналу маршала — очки на неотыгранных лунках считаются по net-par. ' +
+      'Handicap WHS: лучшие 8 из 20 дифференциалов определяют ваш индекс.' }
+  ];
+  var idx = window.ASSISTANT.buildIndex(seed);
+
+  function holeText() {
+    return C.course.holes.map(function (h, i) {
+      var n = i + 1;
+      return 'Лунка ' + n + ': пар ' + h.p + ', индекс сложности ' + h.hcp + ', рекомендованное время ' + C.course.timings[n] + ' минут, метражи: чёрный ' + h.bk + ', синий ' + h.bl + ', белый ' + h.wh + ', красный ' + h.rd + ' метров.';
+    }).join(' ');
+  }
+
+  /* pdf.js извлечение текста с деградацией */
+  document.getElementById('pdf').addEventListener('change', function (e) {
+    var f = e.target.files[0]; if (!f) return;
+    var st = document.getElementById('pdfStatus');
+    if (!window.pdfjsLib) { st.textContent = 'pdf.js не загружен (офлайн?) — работаем без PDF.'; return; }
+    st.textContent = 'Читаю PDF…';
+    var fr = new FileReader();
+    fr.onload = function () {
+      var data = new Uint8Array(fr.result);
+      window.pdfjsLib.getDocument({ data: data }).promise.then(function (pdf) {
+        var pages = []; var chain = Promise.resolve();
+        var max = Math.min(pdf.numPages, 120);
+        for (var p = 1; p <= max; p++) {
+          (function (pp) {
+            chain = chain.then(function () {
+              return pdf.getPage(pp).then(function (page) {
+                return page.getTextContent().then(function (tc) {
+                  pages.push(tc.items.map(function (i) { return i.str; }).join(' '));
+                });
+              });
+            });
+          })(p);
+        }
+        chain.then(function () {
+          var docs = seed.concat([{ id: 'pdf', title: f.name, text: pages.join('\n') }]);
+          idx = window.ASSISTANT.buildIndex(docs);
+          st.textContent = 'PDF добавлен в индекс: ' + f.name + ' (' + max + ' стр.)';
+        }).catch(function () { st.textContent = 'Не удалось прочитать PDF.'; });
+      });
+    };
+    fr.readAsArrayBuffer(f);
+  });
+
+  function ask() {
+    var q = document.getElementById('q').value.trim();
+    if (!q) return;
+    var ans = window.ASSISTANT.ask(idx, q, 3);
+    document.getElementById('answers').innerHTML = ans.length ? ans.map(function (a) {
+      return '<div class="card" style="border-left:3px solid var(--accent);">' +
+        '<small style="color:var(--muted)">' + a.title + ' · score ' + a.score + '</small><p>' + window.Util.escapeHtml(a.text) + '</p></div>';
+    }).join('') : '<div class="card">По индексу ничего не нашлось. Попробуйте переформулировать (BM25 работает точнее с ключевыми словами: «мяч», «патт», «штраф»).</div>';
+  }
+  document.getElementById('ask').addEventListener('click', ask);
+  document.getElementById('q').addEventListener('keydown', function (e) { if (e.key === 'Enter') ask(); });
+
+  var chips = ['Время на поиск мяча', 'Красная пеналь-зона', 'Как быстрее играть', 'Миллиган разрешён?', 'Что такое дифференциал', 'Гимми в турнире', 'Пауза раунда'];
+  document.getElementById('chips').innerHTML = chips.map(function (c) { return '<button class="btn btn--ghost">' + c + '</button>'; }).join('');
+  document.getElementById('chips').querySelectorAll('button').forEach(function (b) {
+    b.addEventListener('click', function () { document.getElementById('q').value = b.textContent; ask(); });
+  });
+})();
+</script>
+</body>
+</html>

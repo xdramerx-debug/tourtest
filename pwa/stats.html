@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Статистика клуба · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.1.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Статистика клуба</h1></div>
+  <div class="holesumo" id="kpis" style="margin-bottom:14px;"></div>
+  <div class="card"><h3>Распределение результатов на лунках</h3><div class="tablewrap"><div id="holeStats"></div></div></div>
+  <div class="card" style="margin-top:14px;"><h3>Топ игроков по среднему ±par (завершённые 18-луночные раунды)</h3><div id="tops"></div></div>
+</main>
+<script src="js/config.js?v=3.1.0"></script>
+<script src="js/i18n.js?v=3.1.0"></script>
+<script src="js/engine/whs.js?v=3.1.0"></script>
+<script src="js/db.js?v=3.1.0"></script>
+<script src="js/auth.js?v=3.1.0"></script>
+<script src="js/util.js?v=3.1.0"></script>
+<script src="js/ui.js?v=3.1.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('stats');
+  var C = window.APP_CONFIG;
+  var privacy = null;
+  window.DB.on('settings/privacy', function (p) { privacy = p; });
+  window.DB.on('rounds', function (rounds) {
+    var all = Object.values(rounds || {});
+    var done = all.filter(function (r) { return r.status === 'completed'; });
+    var live = all.filter(function (r) { return r.status === 'active'; });
+    var players = {}; // name → {rounds, totalPar}
+    var holeAgg = C.course.holes.map(function () { return { n: 0, eagles: 0, birdies: 0, pars: 0, bogeys: 0, dbl: 0, worse: 0, sumDiff: 0 }; });
+    all.forEach(function (r) {
+      Object.entries(r.players || {}).forEach(function (pv) {
+        var p = pv[1]; var sum = window.WHS.summarize(p.scores || {}, C.course.holes, p.fieldHcp);
+        if (r.status === 'completed' && sum.played >= 18) {
+          var k = p.name || pv[0];
+          players[k] = players[k] || { n: 0, s: 0 };
+          players[k].n++; players[k].s += sum.toPar;
+        }
+        ((r.nHoles === 18) || true) && C.course.holes.forEach(function (h, i) {
+          var v = p.scores && p.scores[String(i + 1)];
+          if (v == null || v === 0) return;
+          var d = v - h.p; var A = holeAgg[i];
+          A.n++; A.sumDiff += d;
+          if (d <= -2) A.eagles++; else if (d === -1) A.birdies++; else if (d === 0) A.pars++;
+          else if (d === 1) A.bogeys++; else if (d === 2) A.dbl++; else A.worse++;
+        });
+      });
+    });
+    // KPI
+    var grosses = [];
+    done.forEach(function (r) {
+      Object.values(r.players || {}).forEach(function (p) {
+        var s = window.WHS.summarize(p.scores || {}, C.course.holes, p.fieldHcp);
+        if (s.played >= 18) grosses.push(s.gross);
+      });
+    });
+    var avgG = grosses.length ? Math.round(grosses.reduce(function (a, b) { return a + b; }, 0) / grosses.length) : null;
+    var bestG = grosses.length ? Math.min.apply(null, grosses) : null;
+    document.getElementById('kpis').innerHTML =
+      stat(all.length, 'раундов всего') + stat(done.length, 'завершено') + stat(live.length, 'live') +
+      stat(avgG != null ? avgG : '—', 'avg gross (18)') + stat(bestG != null ? bestG : '—', 'рекорд сезона (gross)') +
+      stat(grosses.length, '18-луночных карточек');
+    // hole stats table
+    document.getElementById('holeStats').innerHTML = '<table class="tbl"><thead><tr><th>#</th><th>P</th><th>avg ±</th><th>🦅</th><th>🐦</th><th>par</th><th>bgy</th><th>dbl</th><th>+3</th></tr></thead><tbody>' +
+      C.course.holes.map(function (h, i) {
+        var A = holeAgg[i];
+        var avg = A.n ? (A.sumDiff / A.n) : null;
+        return '<tr><td>' + (i + 1) + '</td><td>' + h.p + '</td><td>' + (avg == null ? '—' : (avg > 0 ? '+' : '') + avg.toFixed(2)) + '</td><td>' + pct(A.eagles, A.n) + '</td><td>' + pct(A.birdies, A.n) + '</td><td>' + pct(A.pars, A.n) + '</td><td>' + pct(A.bogeys, A.n) + '</td><td>' + pct(A.dbl, A.n) + '</td><td>' + pct(A.worse, A.n) + '</td></tr>';
+      }).join('') + '</tbody></table>';
+    // tops
+    var tops = Object.entries(players).map(function (e) {
+      return { name: e[0], n: e[1].n, avg: Math.round(e[1].s / e[1].n * 10) / 10 };
+    }).sort(function (a, b) { return a.avg - b.avg; }).slice(0, 15);
+    document.getElementById('tops').innerHTML = tops.length ? '<table class="tbl"><thead><tr><th>#</th><th>Игрок</th><th>Раундов</th><th>avg ±par</th></tr></thead><tbody>' +
+      tops.map(function (r, i) { return '<tr><td>' + (i + 1) + '</td><td style="text-align:left;">' + window.Util.showName(r.name, r.name, privacy, window.Auth.isAdmin()) + '</td><td>' + r.n + '</td><td>' + (r.avg > 0 ? '+' : '') + r.avg + '</td></tr>'; }).join('') + '</tbody></table>' : 'Пока нет завершённых 18-луночных раундов.';
+  });
+  function stat(v, l) { return '<div class="stat"><b>' + v + '</b>' + l + '</div>'; }
+  function pct(x, n) { if (!n) return '—'; var p = Math.round(x / n * 100); return p + '%'; }
+})();
+</script>
+</body>
+</html>

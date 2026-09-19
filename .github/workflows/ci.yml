@@ -33,10 +33,12 @@ jobs:
           node scripts/check-contrast.mjs
       - name: pestovo clone tests (pwa engine + firebase functions)
         run: |
-          node --test tests/pestovo-engine.test.mjs
+          node --test tests/pestovo-engine.test.mjs tests/pestovo-tour.test.mjs
           node --test firebase/functions/test/push.test.mjs
           node --check firebase/functions/index.js
           node --check firebase/functions/push.js
+          for f in pwa/js/*.js pwa/js/engine/*.js pwa/sw.js; do node --check "$f" || exit 1; done
+          node scripts/check-pwa-pages.mjs
       - name: build 15 apps
         run: npm run build
       - name: bundle budget

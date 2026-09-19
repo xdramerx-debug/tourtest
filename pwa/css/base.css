@@ -264,3 +264,7 @@ html[data-dsp="5"] h1, html[data-dsp-page="5"] h1 {
 }
 /* Безопасная зона (notch) */
 .foot, main#content, .page { padding-bottom: max(96px, calc(env(safe-area-inset-bottom) + 48px)); }
+
+/* сервисные бейджи (вызовы/pace/статусы) */
+.badge--ok{background:#e2f5e5;color:#1d6b32;border:1px solid #b5e3bc;}
+.badge--danger{background:#fdeaea;color:#b3261e;border:1px solid #f3c1bc;}

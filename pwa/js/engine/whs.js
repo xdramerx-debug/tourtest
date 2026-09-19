@@ -1,8 +1,9 @@
 /* WHS-расчёты (§4). Чистый модуль без DOM/БД — Node-тестируемый (tests/pestovo-engine.test.mjs).
    UMD: window.WHS в браузере, module.exports в Node. */
 (function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.WHS = factory();
+  var api = factory();
+  try { if (typeof module === 'object' && module.exports) module.exports = api; } catch (e) {}
+  if (root) root.WHS = api;
 })(typeof globalThis !== 'undefined' ? globalThis : (typeof self !== 'undefined' ? self : this), function () {
   'use strict';
 

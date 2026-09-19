@@ -55,7 +55,8 @@
       setLocal(null); try { localStorage.removeItem('pc.user'); } catch (e) {}
     },
     isAdmin: function () { return state.user && state.user.role === 'admin'; },
-    current: function () { return state.user; }
+    current: function () { return state.user; },
+    currentUser: function () { return state.user; }
   };
 
   // инициализация

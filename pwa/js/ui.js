@@ -41,8 +41,18 @@
         '<h3>' + t('home.more') + '</h3>' +
         '<div class="tools">' +
         '<a class="btn" href="tv.html">TV-табло</a>' +
+        '<a class="btn" href="tournaments.html">' + t('nav.tournaments') + '</a>' +
+        '<a class="btn" href="oom.html">' + t('nav.oom') + '</a>' +
+        '<a class="btn" href="stats.html">' + t('nav.stats') + '</a>' +
+        '<a class="btn" href="players.html">' + t('nav.players') + '</a>' +
         '<a class="btn" href="guide.html">' + t('nav.guide') + '</a>' +
         '<a class="btn" href="handicap.html">' + t('nav.handicap') + '</a>' +
+        '<a class="btn" href="predictor.html">' + t('nav.predictor') + '</a>' +
+        '<a class="btn" href="feed.html">' + t('nav.feed') + '</a>' +
+        '<a class="btn" href="assistant.html">' + t('nav.assistant') + '</a>' +
+        '<a class="btn" href="qr-start.html">QR-старт</a>' +
+        '<a class="btn" href="design-preview.html">' + t('nav.design') + '</a>' +
+        (window.Auth.isAdmin() ? '<a class="btn btn--accent" href="admin.html">' + t('nav.admin') + '</a>' : '<a class="btn" href="auth.html">' + t('nav.auth') + '</a>') +
         '<a class="btn ghost" href="#" data-close>✕</a>' +
         '</div>';
       window.Util.modal(html);

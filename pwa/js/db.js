@@ -62,6 +62,37 @@
         var uid = 'demo-' + (i + 1);
         memory.users[uid] = { name: d[0], gender: d[1], handicap: d[2], defaultTee: d[3], email: 'demo' + (i + 1) + '@pestovo.local', createdAt: now() - (30 - i) * 86400000 };
       });
+      // демо-турнир «в прямом эфире»: 2 флета, частичные карточки — для оживления превью
+      var HCP = { 'demo-1': 12.4, 'demo-2': 8.1, 'demo-3': 20.3, 'demo-4': 15.6, 'demo-5': 26.8, 'demo-6': 9.9, 'demo-7': 3.2, 'demo-8': 24.4 };
+      var TEE = { 'demo-1': 'wh', 'demo-2': 'bk', 'demo-3': 'rd', 'demo-4': 'wh', 'demo-5': 'bl', 'demo-6': 'wh', 'demo-7': 'bk', 'demo-8': 'rd' };
+      var GEN = { 'demo-1': 'men', 'demo-2': 'men', 'demo-3': 'women', 'demo-4': 'women', 'demo-5': 'men', 'demo-6': 'women', 'demo-7': 'men', 'demo-8': 'women' };
+      var NAMES = { 'demo-1': 'Иван Петров', 'demo-2': 'Сергей Ихнов', 'demo-3': 'Ольга Ильина', 'demo-4': 'Марина Енина', 'demo-5': 'Алексей Дудин', 'demo-6': 'Катерина Пронина', 'demo-7': 'Никита Фёдоров', 'demo-8': 'Лела Фролова' };
+      var pars = (C.course && C.course.holes || []).map(function (h) { return h.p; });
+      function scoresFor(thru, bias) {
+        var sc = {};
+        for (var n = 1; n <= thru; n++) { var p = pars[n - 1] || 4; var d = ((n * 7 + bias * 3) % 4) - 1; sc[String(n)] = Math.max(1, p + d); }
+        return sc;
+      }
+      var tourPlayers = {};
+      ['demo-1', 'demo-2', 'demo-5', 'demo-4'].forEach(function (uid, i) {
+        var tee = TEE[uid], g = GEN[uid], hi = HCP[uid];
+        tourPlayers[uid] = { name: NAMES[uid], gender: g, tee: tee, handicap: hi,
+          fieldHcp: window.WHS ? window.WHS.fieldHcp(hi, tee, g, C.course.ratings, C.course.par) : null,
+          flight: 'A', scores: scoresFor(9, i) };
+      });
+      ['demo-3', 'demo-6', 'demo-7', 'demo-8'].forEach(function (uid, i) {
+        var tee = TEE[uid], g = GEN[uid], hi = HCP[uid];
+        tourPlayers[uid] = { name: NAMES[uid], gender: g, tee: tee, handicap: hi,
+          fieldHcp: window.WHS ? window.WHS.fieldHcp(hi, tee, g, C.course.ratings, C.course.par) : null,
+          flight: 'B', scores: scoresFor(5, i + 2) };
+      });
+      memory.tournaments['demo-tour-1'] = {
+        name: 'Кубок открытия сезона «Пестово»', date: new Date().toISOString().slice(0, 10),
+        format: 'stroke', divisions: 'both', tee: 'bl', tiebreak: 'countback', status: 'live',
+        createdAt: now() - 3600000 * 2, startsAt: now() - 3600000 * 2, players: tourPlayers
+      };
+      memory.broadcasts['demo-bc-1'] = { title: 'Добро пожаловать в Пестово Live!', body: 'Кубок открытия сезона уже на поле — следите за живым счётом на табло.', audience: 'all', time: now() - 3600000 };
+      memory.alerts['demo-alert-1'] = { type: 'marshal', hole: 7, playerName: 'Тур Смирнов', time: now() - 900000, status: 'closed', round: null };
       memory.__seededUsers = true;
     }
     persist();
