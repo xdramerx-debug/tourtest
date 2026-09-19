@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Симулятор WHS · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.2.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Симулятор WHS</h1><p class="desc">Какой gross сохранит индекс, а какой — снизит его на 1.0.</p></div>
+  <div class="card">
+    <div class="row">
+      <label class="field"><span>Текущий индекс</span><input id="idx" type="number" step="0.1" value="12.4"></label>
+      <label class="field"><span>Раундов в истории</span><input id="hist" type="number" value="20" min="1" max="60"></label>
+      <label class="field"><span>Пол</span><select id="gender"><option value="men">Мужской</option><option value="women">Женский</option></select></label>
+      <label class="field"><span>ТИ</span><select id="tee"><option value="bk">Чёрный</option><option value="bl">Синий</option><option value="wh" selected>Белый</option><option value="rd">Красный</option></select></label>
+    </div>
+    <button class="btn btn--accent" id="go">Рассчитать</button>
+    <div id="out" style="margin-top:14px;"></div>
+  </div>
+  <div class="card" id="curves" style="margin-top:14px;"><h3>Таблица целей (гурс по индексу)</h3><div class="tablewrap"><div id="curveTbl"></div></div></div>
+</main>
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/engine/whs.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('predictor');
+  var C = window.APP_CONFIG;
+  function go() {
+    var idx = Number(document.getElementById('idx').value.replace(',', '.'));
+    var tee = document.getElementById('tee').value, gender = document.getElementById('gender').value;
+    var r = (C.course.ratings[gender] || {})[tee] || C.course.ratings.men[tee] || C.course.ratings.men.wh;
+    var hist = Number(document.getElementById('hist').value) || 20;
+    var s = window.WHS.simulator(idx, hist, tee, gender, C.course.ratings, C.course.par);
+    document.getElementById('out').innerHTML =
+      '<div class="holesumo">' +
+      '<div class="stat"><b>' + s.keep + '</b>цель: сохранить ' + idx + '</div>' +
+      '<div class="stat"><b>' + s.betterByOne + '</b>снизить на 1.0</div>' +
+      '<div class="stat"><b>' + window.WHS.fieldHcp(idx, tee, gender, C.course.ratings, C.course.par) + '</b>полевой HCP</div>' +
+      '<div class="stat"><b>' + r.cr + '/' + r.sr + '</b>CR/SR ' + tee.toUpperCase() + '</div>' +
+      '</div><small style="color:var(--muted)">' + s.note + ' · дифф = (adjGross − CR) × 113 / SR; индекс — среднее 8 лучших из 20.</small>';
+    // кривая для диапазона индексов
+    var rows = [];
+    for (var i = 0; i <= 36; i += 2) {
+      var k = window.WHS.simulator(i, 20, tee, gender, C.course.ratings, C.course.par);
+      rows.push('<tr><td>' + i.toFixed(1) + '</td><td>' + k.keep + '</td><td>' + k.betterByOne + '</td></tr>');
+    }
+    document.getElementById('curveTbl').innerHTML = '<table class="tbl"><thead><tr><th>Индекс</th><th>Цель: удержать</th><th>Цель: −1.0</th></tr></thead><tbody>' + rows.join('') + '</tbody></table>';
+  }
+  document.getElementById('go').addEventListener('click', go);
+  go();
+})();
+</script>
+</body>
+</html>

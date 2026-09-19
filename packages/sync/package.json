@@ -1,0 +1,11 @@
+{
+  "name": "@csl/sync",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live sync: offline-очередь, идемпотентность, конфликт-резолвер, транспорты (SSE/REST, demo), стор",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}

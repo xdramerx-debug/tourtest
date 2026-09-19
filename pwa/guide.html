@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title data-i18n="guide.title">Поле-проводник · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.2.0">
+  <style>
+    .tabs{display:flex;gap:6px;margin-bottom:14px;overflow-x:auto;}
+    .tabs .chip{white-space:nowrap;}
+    .steps{padding-left:18px;font-size:14px;line-height:1.7;}
+  </style>
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1 data-i18n="guide.title">Поле-проводник</h1><p class="desc" data-i18n="guide.desc">Как проходить лунки, чтобы играть ровнее и быстрее.</p></div>
+  <div class="btnrow" id="teeTabs"></div>
+  <div class="cards" id="guide-list"></div>
+</main>
+
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('guide');
+  var C = window.APP_CONFIG;
+  var tee = 'wh';
+  var tabs = document.getElementById('teeTabs');
+  tabs.innerHTML = ['bk','bl','wh','rd'].map(function (t2) {
+    return '<button class="btn btn--ghost" data-t="' + t2 + '">' + (C.tees[t2] || {})[i18nLang()] + '</button>';
+  }).join('');
+  tabs.addEventListener('click', function (e) {
+    var b = e.target.closest('[data-t]'); if (!b) return;
+    tee = b.getAttribute('data-t'); render();
+    tabs.querySelectorAll('button').forEach(function (x) { x.classList.toggle('btn--accent', x === b); });
+  });
+  tabs.querySelector('[data-t="wh"]') && tabs.querySelector('[data-t="wh"]').classList.add('btn--accent');
+
+  function render() {
+    var lang = i18nLang();
+    var desc = C.descriptions || {};
+    document.getElementById('guide-list').innerHTML = C.course.holes.map(function (h, idx) {
+      var n = idx + 1;
+      var d = desc[n] || {};
+      var text = d[lang] || d.ru || '';
+      var steps = text.split('\n').map(function (s) { return s.replace(/^\d+\.\s*/, '').trim(); }).filter(Boolean);
+      return '<div class="card">' +
+        '<div class="card__head"><span class="card__title">#' + n + ' · P' + h.p + ' · SI ' + h.hcp + '</span><span class="badge badge--tee-' + tee + '">' + (h[tee] != null ? h[tee] : '—') + ' м</span></div>' +
+        (steps.length ? '<ol class="steps">' + steps.map(function (s) { return '<li>' + window.Util.escapeHtml(s) + '</li>'; }).join('') + '</ol>' : '') +
+        '<small style="color:var(--muted)">' + t('guide.timings') + ' ' + (C.course.timings[n] || '—') + ' мин</small>' +
+      '</div>';
+    }).join('');
+  }
+  document.addEventListener('pc:lang', render);
+  render();
+})();
+</script>
+</body>
+</html>

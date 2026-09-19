@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru" data-design="1">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="csl-basename" content="./" />
+  <meta name="theme-color" content="#0B3D2E" />
+  <meta name="description" content="ClubScore Live — высокотехнологичный live-скоринг гольф-клуба: один продукт, пять горячих премиум-шаблонов." />
+  <link rel="manifest" href="./manifest.webmanifest" />
+  <link rel="icon" href="./icon.svg" type="image/svg+xml" />
+  <script>
+    // анти-FOUC (ARCHITECTURE §0 v2): тема и режим подставлены до первого кадра —
+    // ?theme=N → localStorage csl.theme → системная тёмная тема → '1' (Classic)
+    (function () {
+      try {
+        var m = /(?:^|[?&])theme=([1-5])\b/.exec(location.search);
+        var d = m ? m[1]
+          : (localStorage.getItem('csl.theme')
+            || (matchMedia('(prefers-color-scheme: dark)').matches ? '5' : '1'));
+        var md = localStorage.getItem('csl.mode')
+          || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+        document.documentElement.dataset.design = d;
+        document.documentElement.dataset.mode = md;
+      } catch (e) { /* игнорируем — DS-дефолты */ }
+    })();
+  </script>
+  <title>ClubScore Live · Live-скоринг гольф-клуба</title>
+</head>
+<body>
+  <div id="root"></div>
+  <noscript>ClubScore Live требует включённый JavaScript.</noscript>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+</html>

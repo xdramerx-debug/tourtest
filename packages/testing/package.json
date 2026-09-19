@@ -1,0 +1,11 @@
+{
+  "name": "@csl/testing",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live testing: фикстуры (144 игрока/4 флайта/3 раунда), seeded RNG, хелперы",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}

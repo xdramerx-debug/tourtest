@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Групповой ввод · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.0.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="card pace" id="paceBox"><small data-i18n="pace.title">Pace-ассистент</small>
+    <div class="pace__bar"><div class="pace__fill" id="paceFill" style="width:0%"></div></div><small id="paceText">—</small></div>
+
+  <div class="card livecard">
+    <div class="card__head"><span class="card__title" id="roundTitle">Групповой раунд</span><span class="badge" id="roundStatus">—</span></div>
+    <div class="holesumo" id="meta"></div>
+  </div>
+
+  <div class="card" style="margin-top:12px;">
+    <div class="holeHead"><div class="big" id="hNum">1</div>
+      <div><b id="hInfo">Лунка 1</b><div class="stat"><small id="hMeta">P4 · SI 6</small></div></div></div>
+    <div id="playersBlock"></div>
+    <div class="btnrow">
+      <button class="btn btn--ghost" id="prevH">←</button>
+      <button class="btn btn--accent" id="nextH">Следующая лунка →</button>
+    </div>
+  </div>
+
+  <div class="btnrow" style="margin-top:12px;">
+    <button class="btn" id="finish9">Завершить F9</button>
+    <button class="btn btn--accent" id="finish18">Завершить 18</button>
+    <button class="btn btn--ghost" id="switchSolo" style="margin-left:auto;">Мой режим (соло)</button>
+  </div>
+</main>
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/engine/whs.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('group');
+  var C = window.APP_CONFIG;
+  var qs = new URLSearchParams(location.search);
+  var roundId = qs.get('round');
+  if (!roundId) { location.replace('setup-round.html'); return; }
+  var round = null, hole = 1, seq = null;
+  if (qs.get('kiosk') || qs.get('as')) { document.getElementById('app-header').style.display = 'none'; }
+
+  window.DB.on('rounds/' + roundId, function (rd) {
+    if (!rd) return;
+    round = rd;
+    if (!seq) { seq = holeSeq(rd.startHole || 1, rd.nHoles || 18, C.course.holesCount); hole = currentHole(); }
+    render();
+    if (rd.paused) document.getElementById('roundStatus').textContent = t('round.paused') + (rd.pauseReason ? ': ' + rd.pauseReason : '');
+  });
+
+  function holeSeq(start, count, total) { var out = [], h = start; while (out.length < count) { out.push(h); h = (h % total) + 1; } return out; }
+  function hd(n) { return C.course.holes[n - 1]; }
+  function currentHole() {
+    for (var i = 0; i < seq.length; i++) {
+      var hn = seq[i];
+      var left = Object.values(round.players || {}).some(function (p) { var v = p.scores && p.scores[String(hn)]; return v == null || v === 0; });
+      if (left) return hn;
+    }
+    return seq[seq.length - 1];
+  }
+
+  function render() {
+    var hdta = hd(hole);
+    document.getElementById('hNum').textContent = String(hole);
+    document.getElementById('hInfo').textContent = t('score.hole') + ' ' + hole;
+    document.getElementById('hMeta').textContent = 'P' + hdta.p + ' · SI ' + hdta.hcp;
+    var st = document.getElementById('roundStatus');
+    if (!round.paused) st.textContent = t('round.status.active');
+    // meta: per-player thru
+    var players = Object.entries(round.players || {});
+    document.getElementById('meta').innerHTML = players.map(function (pv) {
+      var p = pv[1];
+      var sum = window.WHS.summarize(p.scores || {}, C.course.holes, p.fieldHcp);
+      return '<div class="stat"><b>F' + sum.played + '</b>' + window.Util.escapeHtml((p.name || '').split(' ')[0]) + (sum.toPar ? ' (' + (sum.toPar > 0 ? '+' : '') + sum.toPar + ')' : ' (E)') + '</div>';
+    }).join('');
+
+    var wrap = document.getElementById('playersBlock');
+    wrap.innerHTML = players.map(function (pv) {
+      var pid = pv[0], p = pv[1];
+      var cur = p.scores && p.scores[String(hole)];
+      var chips = numberRange(hdta.p, cur).map(function (v) {
+        return '<button class="chip' + (cur === v ? ' is-on' : '') + '" data-p="' + pid + '" data-v="' + v + '">' + v + '</button>';
+      }).join('');
+      return '<div class="card" style="padding:10px 12px;">' +
+        '<div class="card__head" style="align-items:center;"><span class="card__title" style="font-size:15px;">' + window.Util.escapeHtml(p.name || '') + '</span>' +
+        '<span class="score-badge">' + (cur == null || cur === 0 ? '—' : cur) + '</span></div>' +
+        '<div class="btnrow" style="flex-wrap:wrap;">' + chips + '<button class="chip" data-p="' + pid + '" data-v="0">X</button></div></div>';
+    }).join('');
+    wrap.querySelectorAll('[data-v]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var pid = b.getAttribute('data-p'), v = Number(b.getAttribute('data-v'));
+        window.DB.setWithQueue('rounds/' + roundId + '/players/' + pid + '/scores/' + String(hole), v);
+        // локально оптимистично
+        var p = round.players[pid]; p.scores = p.scores || {}; p.scores[String(hole)] = v;
+        render();
+        if (allEntered(hole)) { var i = seq.indexOf(hole); if (i + 1 < seq.length) { hole = seq[i + 1]; render(); } }
+      });
+    });
+    renderPace();
+  }
+  function numberRange(par, cur) {
+    var a = Math.max(1, Math.min(par - 3, (cur || par) - 3)), b2 = (cur || par) + 4;
+    var out = []; for (var x = a; x <= Math.min(15, b2); x++) out.push(x);
+    if (out.indexOf(par) < 0) out.push(par);
+    if (out.indexOf(par - 1) < 0 && par > 4) out.unshift(par - 1);
+    return out.sort(function (m, n) { return m - n; });
+  }
+  function allEntered(hn) {
+    return Object.values(round.players || {}).every(function (p) { var v = p.scores && p.scores[String(hn)]; return v != null && v !== 0; });
+  }
+  function renderPace() {
+    if (!round.startTime) return;
+    var p0 = Object.values(round.players || {})[0] || {};
+    var order = Object.keys(p0.scores || {}).filter(function (k) { return p0.scores[k] != null && p0.scores[k] !== 0; }).map(Number);
+    order.push(hole);
+    var pc = window.WHS.pace(Date.now(), round.startTime, round.startHole || 1, order, C.course.timings);
+    document.getElementById('paceFill').style.width = Math.min(100, Math.max(5, 50 + pc.pct * 2)) + '%';
+    document.getElementById('paceText').textContent = pc.status === 'behind' ? '−' + pc.diffMin + ' мин ' + t('pace.behind') : pc.status === 'ahead' ? '+' + Math.abs(pc.diffMin) + ' мин ' + t('pace.ahead') : t('pace.onTime');
+    document.getElementById('paceBox').className = 'card pace ' + (pc.status === 'behind' ? 'pace--behind' : pc.status === 'ahead' ? 'pace--ahead' : '');
+  }
+  setInterval(renderPace, 30000);
+
+  document.getElementById('prevH').addEventListener('click', function () { var i = seq.indexOf(hole); if (i > 0) { hole = seq[i - 1]; render(); } });
+  document.getElementById('nextH').addEventListener('click', function () { var i = seq.indexOf(hole); if (i + 1 < seq.length) { hole = seq[i + 1]; render(); } });
+  function finish(upto) {
+    if (!confirm('Завершить раунд?')) return;
+    window.DB.update('rounds/' + roundId, { status: 'completed', endTime: Date.now(), finishedAtHole: upto }).then(function () { location = 'leaderboard.html'; });
+  }
+  document.getElementById('finish9').addEventListener('click', function () { finish(9); });
+  document.getElementById('finish18').addEventListener('click', function () { finish(18); });
+  document.getElementById('switchSolo').addEventListener('click', function () {
+    var first = Object.keys(round.players || {})[0];
+    location = 'solo.html?round=' + roundId + (first ? '&player=' + first : '');
+  });
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Лента клуба · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.2.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Лента клуба</h1><p class="desc">Анонсы, результаты, live-события. Реакции — онлайн, push — по подписке.</p></div>
+  <div class="btnrow" style="margin-bottom:12px;">
+    <button class="btn" id="pushBtn">🔔 Подписаться на анонсы</button>
+  </div>
+  <div class="cards" id="feed"></div>
+</main>
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('feed');
+  var EMOJI = ['👏', '⛳', '🔥', '🏆', '❤️'];
+  var broadcasts = {}, reactions = {}, events = [];
+
+  window.DB.on('broadcasts', function (b) { broadcasts = b || {}; render(); });
+  window.DB.on('reactions', function (r) { reactions = r || {}; render(); });
+  window.DB.on('rounds', function (rr) {
+    events = Object.entries(rr || {}).filter(function (r) { return r[1].status === 'completed'; })
+      .sort(function (a, b) { return (b[1].endTime || 0) - (a[1].endTime || 0); }).slice(0, 5)
+      .map(function (r) {
+        var names = Object.values(r[1].players || {}).map(function (p) { return (p.name || '').split(' ')[0]; }).join(', ');
+        return { id: 'round-' + r[0], time: r[1].endTime || r[1].createdAt, title: '🏌 Завершён раунд', body: names, tag: 'auto' };
+      });
+    render();
+  });
+
+  function render() {
+    var items = Object.entries(broadcasts).map(function (b) {
+      return { id: b[0], time: b[1].time || b[1].createdAt || 0, title: b[1].title, body: b[1].body, audience: b[1].audience, emoji: true };
+    }).concat(events);
+    items.sort(function (a, b) { return (b.time || 0) - (a.time || 0); });
+    var wrap = document.getElementById('feed');
+    if (!items.length) { wrap.innerHTML = '<div class="card">Пока пусто — анонсы появятся здесь.</div>'; return; }
+    wrap.innerHTML = items.map(function (it) {
+      var r = reactions[it.id] || {};
+      var chips = EMOJI.map(function (e) {
+        var n = Object.values(r).filter(function (x) { return x === e; }).length;
+        return '<button class="chip" data-id="' + it.id + '" data-e="' + e + '">' + e + (n ? ' ' + n : '') + '</button>';
+      }).join('');
+      return '<div class="card">' +
+        '<div class="card__head"><span class="card__title">' + window.Util.escapeHtml(it.title || '') + '</span>' +
+        '<span class="badge">' + (it.audience || it.tag || '') + '</span></div>' +
+        '<p>' + window.Util.escapeHtml(it.body || '') + '</p>' +
+        '<small style="color:var(--muted)">' + window.Util.fmtDate(it.time) + '</small>' +
+        (it.emoji !== false ? '<div class="btnrow" style="margin-top:8px;">' + chips + '</div>' : '') +
+        '</div>';
+    }).join('');
+    wrap.querySelectorAll('.chip').forEach(function (ch) {
+      ch.addEventListener('click', function () {
+        var uid = myKey();
+        window.DB.set('reactions/' + ch.getAttribute('data-id') + '/' + uid, ch.getAttribute('data-e'));
+      });
+    });
+  }
+  function myKey() {
+    try {
+      var k = localStorage.getItem('pc.react');
+      if (!k) { k = 'u' + window.Util.uid(); localStorage.setItem('pc.react', k); }
+      return k;
+    } catch (e) { return 'anon'; }
+  }
+
+  /* Подписка на push (§10): реальный PushManager + VAPID; demo — запись в push_subscriptions */
+  document.getElementById('pushBtn').addEventListener('click', function () {
+    var btn = this;
+    btn.disabled = true;
+    (async function () {
+      var audience = 'all';
+      try {
+        if ('serviceWorker' in navigator && 'PushManager' in window && window.FIREBASE_VAPID_PUBLIC) {
+          var reg = await navigator.serviceWorker.ready;
+          var sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: urlBase64ToUint8Array(window.FIREBASE_VAPID_PUBLIC)
+          });
+          await window.DB.set('push_subscriptions/' + btoa(sub.endpoint).replace(/[+/=]/g, ''), { subscription: sub.toJSON(), endpoint: sub.endpoint, keys: sub.toJSON().keys, audience: audience, createdAt: Date.now() });
+          window.Util.toast('Подписка активирована');
+          return;
+        }
+        // demo/offline fallback — «мягкая» подписка
+        await window.DB.set('push_subscriptions/demo-' + myKey(), { endpoint: 'demo://' + myKey(), audience: audience, createdAt: Date.now(), demo: true });
+        window.Util.toast('Режим demo: подписка сохранена локально');
+      } catch (e) {
+        window.Util.toast('Не удалось включить push: ' + (e && e.message ? e.message : 'ошибка'), 'err');
+      }
+    })().finally(function () { btn.disabled = false; });
+  });
+  function urlBase64ToUint8Array(s) {
+    var padding = '='.repeat((4 - s.length % 4) % 4);
+    var base64 = (s + padding).replace(/-/g, '+').replace(/_/g, '/');
+    var raw = atob(base64);
+    var out = new Uint8Array(raw.length);
+    for (var i = 0; i < raw.length; ++i) out[i] = raw.charCodeAt(i);
+    return out;
+  }
+})();
+</script>
+</body>
+</html>

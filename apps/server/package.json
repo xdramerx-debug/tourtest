@@ -1,0 +1,19 @@
+{
+  "name": "@csl/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live reference server: SSE real-time + action journal (node:sqlite, ADR-0003)",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "tsx src/main.ts",
+    "start": "node --experimental-strip-types src/main.ts"
+  },
+  "dependencies": {
+    "@csl/core": "0.1.0",
+    "@csl/sync": "0.1.0",
+    "@csl/testing": "0.1.0"
+  }
+}

@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Зачёт сезона (OoM) · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.2.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Зачёт сезона (Order of Merit)</h1><p class="desc">Очки: 100 / 80 / 70 / 60 / 55… по 10-е место −2 за место, далее +5 за участие.</p></div>
+  <div class="card" id="oomTable"></div>
+  <div class="card" style="margin-top:14px;"><h3>События сезона</h3><div id="events"></div></div>
+</main>
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/engine/whs.js?v=3.2.0"></script>
+<script src="js/engine/tour.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('oom');
+  var C = window.APP_CONFIG;
+  window.DB.on('settings/privacy', function (p) { window.__privacy = p; });
+  window.DB.on('tournaments', function (trs) {
+    var events = [];
+    Object.entries(trs || {}).forEach(function (t) {
+      var tr = t[1];
+      var players = Object.entries(tr.players || {}).map(function (pv) { return Object.assign({ pid: pv[0] }, pv[1]); });
+      if (!players.length) return;
+      var lb = window.TOUR.leaderboard(players, C.course.holes, { format: tr.format || 'stroke', tiebreak: 'countback' });
+      events.push({ id: t[0], name: tr.name || t[0], date: tr.date, standings: lb.map(function (r) { return { pid: r.pid, name: r.name, place: r.inactive ? 99 : Number(String(r.place).replace('=', '')) }; }) });
+    });
+    events.sort(function (a, b2) { return String(a.date || '').localeCompare(String(b2.date || '')); });
+    var acc = window.TOUR.computeOoM(events);
+    document.getElementById('oomTable').innerHTML = acc.length ?
+      '<div class="tablewrap"><table class="tbl"><thead><tr><th>#</th><th>Игрок</th><th>Очки</th><th>Событий</th><th>Лучшее место</th></tr></thead><tbody>' +
+      acc.map(function (r, i) {
+        return '<tr><td>' + (i + 1) + '</td><td style="text-align:left;">' + window.Util.showName(r.name, r.pid, window.__privacy, window.Auth.isAdmin()) + '</td><td><b>' + r.points + '</b></td><td>' + r.events + '</td><td>' + r.best + '</td></tr>';
+      }).join('') + '</tbody></table></div>' : 'Сезон ещё пуст — сыграйте первый турнир.';
+    document.getElementById('events').innerHTML = events.length ? events.map(function (e) {
+      return '<div style="padding:6px 0;border-bottom:1px solid var(--border);"><a href="tournaments.html?tournament=' + e.id + '"><b>' + window.Util.escapeHtml(e.name) + '</b></a> <small style="color:var(--muted)">' + (e.date || '') + '</small></div>';
+    }).join('') : '—';
+  });
+})();
+</script>
+</body>
+</html>

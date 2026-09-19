@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Игроки клуба · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.2.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Игроки</h1><p class="desc">Каталог клуба, индексы WHS, приватность публикации (§11).</p></div>
+  <input type="text" id="q" placeholder="Поиск по имени…" style="margin-bottom:12px;">
+  <div class="card" id="roster"></div>
+</main>
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/engine/whs.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('players');
+  var C = window.APP_CONFIG;
+  var users = {}, privacy = null, q = '';
+  window.DB.on('settings/privacy', function (p) { privacy = p; render(); });
+  window.DB.on('users', function (u) { users = u || {}; render(); });
+  document.getElementById('q').addEventListener('input', window.Util.debounce(function (e) { q = e.target.value.toLowerCase(); render(); }, 150));
+  function render() {
+    var rows = Object.entries(users)
+      .filter(function (u) { return !q || String(u[1].name || '').toLowerCase().indexOf(q) >= 0; })
+      .sort(function (a, b) { return (a[1].handicap == null ? 99 : a[1].handicap) - (b[1].handicap == null ? 99 : b[1].handicap); })
+      .map(function (u, i) {
+        var p = u[1];
+        var exact = p.handicap != null ? p.handicap : null;
+        var field = exact != null ? window.WHS.fieldHcp(exact, p.defaultTee || 'wh', p.gender || 'men', C.course.ratings, C.course.par) : null;
+        return '<tr><td>' + (i + 1) + '</td>' +
+          '<td style="text-align:left;">' + window.Util.showName(p.name, u[0], privacy, window.Auth.isAdmin()) + '</td>' +
+          '<td><span class="badge badge--tee-' + (p.defaultTee || 'wh') + '">' + (p.defaultTee || 'wh').toUpperCase() + '</span></td>' +
+          '<td>' + (exact != null ? exact : '—') + '</td>' +
+          '<td>' + (field != null ? '<span class="badge ' + window.Util.hcpBadgeClass(field) + '">' + field + '</span>' : '—') + '</td>' +
+          '<td>' + (window.Auth.isAdmin() ? '<button class="btn btn--ghost" data-uid="' + u[0] + '">✎</button>' : '') + '</td></tr>';
+      });
+    document.getElementById('roster').innerHTML = '<div class="tablewrap"><table class="tbl"><thead><tr><th>#</th><th>Игрок</th><th>ТИ</th><th>HI</th><th>Полевой</th><th></th></tr></thead><tbody>' + rows.join('') + '</tbody></table></div>' +
+      (window.Auth.isAdmin() ? '' : '<small style="color:var(--muted)">Имена маскируются согласно настройкам приватности клуба (§11).</small>');
+    document.getElementById('roster').querySelectorAll('button[data-uid]').forEach(function (b) {
+      b.addEventListener('click', function () { editUser(b.getAttribute('data-uid')); });
+    });
+  }
+  function editUser(uid) {
+    var p = users[uid]; if (!p) return;
+    var html = '<h3>' + window.Util.escapeHtml(p.name) + '</h3>' +
+      '<label class="field"><span>Точный HCP</span><input id="e-hcp" type="number" step="0.1" value="' + (p.handicap != null ? p.handicap : '') + '"></label>' +
+      '<div class="row">' +
+      '<label class="field"><span>ТИ по умолчанию</span><select id="e-tee">' + ['bk','bl','wh','rd'].map(function (t2) { return '<option value="' + t2 + '"' + (p.defaultTee === t2 ? ' selected' : '') + '>' + t2.toUpperCase() + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field"><span>Пол</span><select id="e-gender">' + ['men','women'].map(function (g) { return '<option value="' + g + '"' + (p.gender === g ? ' selected' : '') + '>' + (g === 'men' ? 'Мужской' : 'Женский') + '</option>'; }).join('') + '</select></label>' +
+      '<label class="field"><span>Приватность</span><select id="e-privacy"><option value="">(как у клуба)</option><option value="public">Полное имя</option><option value="short">Фамилия И.</option><option value="anon">Скрывать</option></select></label>' +
+      '</div>' +
+      '<div class="row"><label class="field"><span>Роль</span><input type="text" disabled value="' + (p.role || 'player') + '"></label></div>' +
+      '<div class="btnrow"><button class="btn btn--accent" id="e-save">Сохранить</button><button class="btn btn--ghost" data-close>Закрыть</button></div>';
+    var m = window.Util.modal(html);
+    m.el.querySelector('#e-save').addEventListener('click', function () {
+      var upd = {
+        handicap: m.el.querySelector('#e-hcp').value === '' ? null : Number(m.el.querySelector('#e-hcp').value.replace(',', '.')),
+        defaultTee: m.el.querySelector('#e-tee').value,
+        gender: m.el.querySelector('#e-gender').value
+      };
+      var pv = m.el.querySelector('#e-privacy').value;
+      window.DB.update('users/' + uid, upd).then(function () {
+        return pv ? window.DB.update('users/' + uid + '/privacy', { mode: pv }) : Promise.resolve();
+      }).then(function () { m.close(); window.Util.toast('Сохранено'); });
+    });
+  }
+})();
+</script>
+</body>
+</html>

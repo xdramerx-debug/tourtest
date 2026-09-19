@@ -1,0 +1,11 @@
+{
+  "name": "@csl/app-ui",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClubScore Live app-ui: общие экраны/роуты/паттерны; приложения = роуты варианта + тема дизайна",
+  "exports": {
+    ".": "./src/index.ts",
+    "./*": "./src/*"
+  }
+}
