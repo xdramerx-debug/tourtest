@@ -441,10 +441,17 @@
       var out = {};
       el.querySelectorAll('[data-t]').forEach(function (i2) { out[i2.getAttribute('data-t')] = Number(i2.value) || C.course.timings[i2.getAttribute('data-t')]; });
       try { localStorage.setItem('pc.courseOverride', JSON.stringify(out)); } catch (e) {}
-      audit('course-timings-override', JSON.stringify(out));
-      window.Util.toast('Тайминги обновлены локально');
+      window.DB.set('settings/course/timingsOverride', out).then(function () {
+        audit('course-timings-override', JSON.stringify(out));
+        window.Util.toast('Тайминги обновлены (БД: settings/course)');
+      });
     });
-    el.querySelector('#c-reset').addEventListener('click', function () { localStorage.removeItem('pc.courseOverride'); window.Util.toast('Сброшено'); tabCourse(el); });
+    el.querySelector('#c-reset').addEventListener('click', function () {
+      localStorage.removeItem('pc.courseOverride');
+      window.DB.set('settings/course/timingsOverride', null).then(function () {
+        window.Util.toast('Сброшено'); tabCourse(el);
+      });
+    });
   }
 
   /* ===== 8. Протоколы (§6.7) ===== */

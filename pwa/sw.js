@@ -1,14 +1,14 @@
 /* SW Пестово Live Scoring (§10): precache, runtime offline, офлайн-очередь очков
    (SYNC_SCORES), update-banner, push-уведомления. */
 'use strict';
-var VERSION = '3.1.0';
+var VERSION = '3.2.0';
 var PRECACHE = 'pc-precache-' + VERSION;
 var RUNTIME = 'pc-runtime-' + VERSION;
 var CORE = [
   'index.html', 'setup-round.html', 'solo.html', 'leaderboard.html', 'guide.html',
   'handicap.html', 'auth.html', 'offline.html', 'design-preview.html',
   'tournaments.html', 'oom.html', 'predictor.html', 'stats.html', 'players.html',
-  'feed.html', 'tv.html', 'qr-start.html', 'assistant.html', 'admin.html', 'manifest.json',
+  'feed.html', 'tv.html', 'qr-start.html', 'assistant.html', 'admin.html', 'group.html', 'referee.html', 'manifest.json',
   'css/base.css',
   'js/config.js', 'js/i18n.js', 'js/db.js', 'js/auth.js', 'js/util.js', 'js/ui.js',
   'js/engine/whs.js', 'js/engine/tour.js', 'js/engine/assistant.js',

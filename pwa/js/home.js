@@ -134,7 +134,28 @@
     }).join('');
   }
 
-  window.DB.on('tournaments', function (tourns) { window.__tournaments = tourns || {}; renderNumbers(); });
+  window.DB.on('tournaments', function (tourns) { window.__tournaments = tourns || {}; renderNumbers(); renderLiveTours(); });
+
+  /* Live-турниры на главной (§5.1): топ-3 топов каждого из живых турниров */
+  function renderLiveTours() {
+    var sec = document.getElementById('sec-tours'); if (!sec) return;
+    var lives = Object.entries(window.__tournaments || {}).filter(function (x) { return x[1].status === 'live'; });
+    if (!lives.length) { sec.hidden = true; return; }
+    sec.hidden = false;
+    document.getElementById('sec-tours-body').innerHTML = lives.map(function (x) {
+      var tr = x[1];
+      var players = Object.entries(tr.players || {}).map(function (pv) { return Object.assign({ pid: pv[0] }, pv[1]); });
+      var lb = window.TOUR ? window.TOUR.leaderboard(players, C.course.holes, { format: tr.format || 'stroke', tiebreak: 'countback' }).slice(0, 3) : [];
+      var top = lb.map(function (r) {
+        return '<div style="display:flex;justify-content:space-between;padding:2px 0;"><span>' + (r.place || '') + ' · ' + window.Util.escapeHtml((r.name || '').split(' ')[0]) + '</span><b>' + (r.toPar == null ? 'E' : r.toPar === 0 ? 'E' : r.toPar > 0 ? '+' + r.toPar : r.toPar) + '</b></div>';
+      }).join('');
+      return '<div class="card livecard card--click" onclick="location=\'tournaments.html?tournament=' + x[0] + '\'">' +
+        '<div class="card__head"><span class="card__title">' + window.Util.escapeHtml(tr.name || x[0]) + '</span><span class="badge badge--danger">LIVE</span></div>' +
+        (top || '<small style="color:var(--muted)">Счёт пуст — старт скоро</small>') +
+        '<small style="color:var(--muted)">' + t('format.' + (tr.format || 'stroke')) + ' · ' + Object.keys(tr.players || {}).length + ' уч.</small></div>';
+    }).join('');
+  }
+
   window.DB.on('settings/privacy', function (p) { window.__privacy = p; });
 
   function teeLabel(tee) { return (C.tees[tee] || {})[i18nLang()] || tee.toUpperCase(); }

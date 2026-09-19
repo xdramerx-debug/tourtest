@@ -207,6 +207,53 @@
     }).sort(function (a, b) { return (a.toPar || 0) - (b.toPar || 0); });
   }
 
+  /* ---------- MatchPlayService (§4.4): попарный счёт по нетто-ударам ---------- */
+  /** Очки матча игрока A против B: strokesReceived относительно разницы полевых HCP.
+     Возвращает { up, holesLeft, result: 'WIN'|'LOSS'|'HALF'|'LIVE', status: '2&1' } */
+  function matchScore(a, b, holes) {
+    var diffA = (a.fieldHcp || 0) - (b.fieldHcp || 0); // >0 → A получает diffA ударов
+    var up = 0, played = 0, lastN = 0;
+    for (var i = 0; i < holes.length; i++) {
+      var n = i + 1;
+      var va = a.scores && a.scores[String(n)], vb = b.scores && b.scores[String(n)];
+      if (va == null && vb == null) continue;
+      if (va == null || vb == null || va === 0 || vb === 0) continue;
+      var rec = 0;
+      if (diffA > 0) rec = WHS.strokesReceived(diffA, holes[i], holes);
+      else if (diffA < 0) rec = -WHS.strokesReceived(-diffA, holes[i], holes);
+      var na = va - rec + 0, nb = vb - 0;
+      if (na < nb) up += 1; else if (na > nb) up -= 1;
+      played++; lastN = n;
+      // досрочный исход: up > оставшихся
+      var left = holes.length - played;
+      if (Math.abs(up) > left) return { up: up, played: played, result: up > 0 ? 'WIN' : 'LOSS', status: Math.abs(up) + '&' + left, lastN: lastN };
+    }
+    if (played === holes.length || played > 0) {
+      if (up > 0) return { up: up, played: played, result: 'WIN', status: up + 'UP', lastN: lastN };
+      if (up < 0) return { up: up, played: played, result: 'LOSS', status: Math.abs(up) + 'DN', lastN: lastN };
+      return { up: 0, played: played, result: 'HALF', status: 'AS', lastN: lastN };
+    }
+    return { up: 0, played: 0, result: 'LIVE', status: '—' };
+  }
+  /** Очки match-формата по флеттам: победа 1, делёж 0.5 × состав пар внутри флета. */
+  function matchBoard(flights, holes) {
+    var pts = {}, vs = [];
+    (flights || []).forEach(function (f) {
+      for (var i = 0; i < f.length; i++) {
+        for (var j = i + 1; j < f.length; j++) {
+          var r = matchScore(f[i], f[j], holes);
+          pts[f[i].pid] = pts[f[i].pid] || 0;
+          pts[f[j].pid] = pts[f[j].pid] || 0;
+          if (r.result === 'WIN') pts[f[i].pid] += 1;
+          else if (r.result === 'LOSS') pts[f[j].pid] += 1;
+          else if (r.result === 'HALF') { pts[f[i].pid] += 0.5; pts[f[j].pid] += 0.5; }
+          vs.push({ a: f[i].pid, b: f[j].pid, status: r.status, result: r.result });
+        }
+      }
+    });
+    return { points: pts, matches: vs };
+  }
+
   /* ---------- OoM (§5.6): 100/80/70/60/55/… + 5 за участие ---------- */
   var OOM_TABLE = [100, 80, 70, 60, 55, 50, 45, 40, 35, 30, 28, 26, 24, 22, 20, 18, 16, 14, 12, 10];
   function oomPoints(place) {
@@ -304,6 +351,7 @@
     countback: countback, cmpCountback: cmpCountback,
     leaderboard: leaderboard, pairings: pairings, cut: cut,
     skinsWinners: skinsWinners, bestBallBoard: bestBallBoard,
+    matchScore: matchScore, matchBoard: matchBoard,
     oomPoints: oomPoints, computeOoM: computeOoM, OOM_TABLE: OOM_TABLE,
     protocol: protocol, protocolDiff: protocolDiff,
     parseCsv: parseCsv, draftGet: draftGet, draftSet: draftSet,

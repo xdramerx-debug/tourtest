@@ -137,6 +137,44 @@ test('computeOoM: агрегация по сезону', () => {
   assert.equal(acc[0].events, 2);
 });
 
+/* ---------- match play ---------- */
+test('matchScore: классика 2&1 и делёжка AS', () => {
+  // A выигрывает все 16 первых лунок сухо? Проверим досрочное закрытие и AS.
+  const P = HOLES.map(h => h.p);
+  const a1 = { pid: 'a', fieldHcp: 0, scores: sc(P.map((p, i) => i < 16 ? p - 1 : p)) };
+  const b1 = { pid: 'b', fieldHcp: 0, scores: sc(P.map(p => p)) };
+  // после 16 лунок A ведёт 16 up при 2 оставшихся → закрытие раньше (фактически 6&5 на 13-й)
+  const r1 = TOUR.matchScore(a1, b1, HOLES);
+  assert.equal(r1.result, 'WIN');
+  assert.ok(/^\d+&\d+$/.test(r1.status));
+  const a2 = { pid: 'a', fieldHcp: 0, scores: sc(P) };
+  const b2 = { pid: 'b', fieldHcp: 0, scores: sc(P) };
+  const r2 = TOUR.matchScore(a2, b2, HOLES);
+  assert.equal(r2.result, 'HALF');
+  assert.equal(r2.status, 'AS');
+});
+
+test('matchScore: разница HCP даёт удары защитнику (SI-порядок)', () => {
+  const P = HOLES.map(h => h.p);
+  // разница 1 удар: B (слабее) получает 1 удар на лунке с SI=1 (№11 в Пестово)
+  const a = { pid: 'a', fieldHcp: 0, scores: sc(P) };
+  const b = { pid: 'b', fieldHcp: 1, scores: sc(P.map((p, i) => i === 10 ? p + 1 : p)) };
+  const r = TOUR.matchScore(a, b, HOLES);
+  // B сыграл +1 на SI1-лунке → залатал её скидкой → AS
+  assert.equal(r.result, 'HALF');
+});
+
+test('matchBoard: очки 1/0.5 по парам во флете', () => {
+  const P = HOLES.map(h => h.p);
+  const f = [
+    { pid: 'x', fieldHcp: 0, scores: sc(P.map((p, i) => i % 2 ? p - 1 : p)) },
+    { pid: 'y', fieldHcp: 0, scores: sc(P.map((p, i) => i % 2 ? p : p)) }
+  ];
+  const m = TOUR.matchBoard([f], HOLES);
+  assert.ok((m.points.x || 0) > (m.points.y || 0));
+  assert.equal(m.matches.length, 1);
+});
+
 /* ---------- protocol v2 ---------- */
 test('protocol: структура v2, hash, неперезаписываемость', () => {
   const t = { id: 't1', name: 'Кубок', format: 'stroke', date: '2026-06-01' };

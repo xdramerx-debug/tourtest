@@ -6,8 +6,25 @@
   var UI = window.UI = {
     mount: function (activeKey) {
       renderHeader(activeKey); bindWeather(); bindConnBadge(); bindInternationalization();
-      UI.applyDesignFromParams(); UI.applyStoredDesign();
+      UI.applyDesignFromParams(); UI.applyStoredDesign(); UI.applyCourseOverrides();
       document.addEventListener('pc:lang', function () { if (window.UI.refreshHeaderText) UI.refreshHeaderText(); });
+    },
+
+    /* settings/course (админ → «Поле»): runtime-override таймингов/метражей поверх seed */
+    applyCourseOverrides: function () {
+      var C = window.APP_CONFIG; if (!C || !C.course) return;
+      function merge(sc) {
+        if (!sc) return;
+        if (sc.timingsOverride) { Object.keys(sc.timingsOverride).forEach(function (n) { C.course.timings[n] = Number(sc.timingsOverride[n]) || C.course.timings[n]; }); }
+        if (sc.yardagesOverride) {
+          Object.keys(sc.yardagesOverride).forEach(function (n) {
+            var hd = C.course.holes[Number(n) - 1]; if (!hd) return;
+            ['bk', 'bl', 'wh', 'rd'].forEach(function (t2) { if (sc.yardagesOverride[n][t2] != null) hd[t2] = Number(sc.yardagesOverride[n][t2]); });
+          });
+        }
+      }
+      try { /* локальный override (админ без БД-права) */ var over = JSON.parse(localStorage.getItem('pc.courseOverride') || 'null'); if (over) merge({ timingsOverride: over }); } catch (e) {}
+      window.DB.on('settings/course', merge);
     },
 
     /* ---------- design templates (§9) ---------- */

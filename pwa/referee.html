@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Режим судьи · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.0.0">
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head"><h1>Режим судьи (§5.4)</h1><p class="desc">Быстрая правка любого live-раунда и pace-контроль со стороны.</p></div>
+  <div id="refBody"></div>
+</main>
+<script src="js/config.js?v=3.2.0"></script>
+<script src="js/i18n.js?v=3.2.0"></script>
+<script src="js/engine/whs.js?v=3.2.0"></script>
+<script src="js/db.js?v=3.2.0"></script>
+<script src="js/auth.js?v=3.2.0"></script>
+<script src="js/util.js?v=3.2.0"></script>
+<script src="js/ui.js?v=3.2.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('referee');
+  var C = window.APP_CONFIG;
+  var body = document.getElementById('refBody');
+  var openRound = null;
+
+  window.DB.on('rounds', function (rounds) {
+    var actives = Object.entries(rounds || {}).filter(function (r) { return r[1].status === 'active' || openRound === r[0]; });
+    body.innerHTML = actives.length ? actives.map(function (r) { return card(r); }).join('') : '<div class="card">Активных раундов нет.</div>';
+    body.querySelectorAll('[data-open]').forEach(function (b) {
+      b.addEventListener('click', function () { openRound = openRound === b.getAttribute('data-open') ? null : b.getAttribute('data-open'); window.DB.get('rounds').then(function () {}); forceRender(rounds); });
+    });
+    body.querySelectorAll('[data-pause]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var rid = b.getAttribute('data-pause');
+        window.DB.get('rounds/' + rid).then(function (rd) {
+          window.DB.update('rounds/' + rid, rd.paused ? { paused: null, pauseReason: null } : { paused: true, pauseReason: 'Судья' }).then(function () {
+            window.Util.toast(rd.paused ? 'Пауза снята' : 'Пауза установлена (судья)');
+          });
+        });
+      });
+    });
+    body.querySelectorAll('input[data-sc]').forEach(function (inp) {
+      inp.addEventListener('change', function () {
+        var parts = inp.getAttribute('data-sc').split('|'); // rid|pid|hole
+        var v = inp.value === '' ? null : Math.max(0, Math.min(15, Number(inp.value)));
+        window.DB.set('rounds/' + parts[0] + '/players/' + parts[1] + '/scores/' + parts[2], v).then(function () {
+          window.Util.toast('Правка записана');
+        });
+      });
+    });
+  });
+  function forceRender(rounds) { /* DB.on сам перерисует; для safari: */ }
+
+  function card(r) {
+    var rid = r[0], rd = r[1];
+    var players = Object.entries(rd.players || {});
+    var open = openRound === rid;
+    var head = players.map(function (p) { return (p[1].name || '').split(' ')[0]; }).join(' · ');
+    var detail = '';
+    if (open) {
+      detail = players.map(function (p) {
+        var cells = [];
+        for (var n = 1; n <= 18; n++) {
+          var v = p[1].scores && p[1].scores[String(n)];
+          cells.push('<td><input data-sc="' + rid + '|' + p[0] + '|' + n + '" type="number" min="0" max="15" value="' + (v == null ? '' : v) + '" style="width:44px;text-align:center;"></td>');
+        }
+        var sum = window.WHS.summarize(p[1].scores || {}, C.course.holes, p[1].fieldHcp);
+        return '<div class="tablewrap" style="margin:8px 0;"><table class="tbl"><thead><tr><th style="text-align:left;min-width:140px;">' + window.Util.escapeHtml(p[1].name || '') + ' (F' + sum.played + ')</th>' +
+          Array.from({ length: 18 }, function (_, i) { return '<th>' + (i + 1) + '</th>'; }).join('') + '</tr></thead><tbody><tr><td></td>' + cells.join('') + '</tr></tbody></table></div>';
+      }).join('');
+    }
+    return '<div class="card">' +
+      '<div class="card__head"><span class="card__title">' + window.Util.escapeHtml(head) + '</span>' +
+      '<span class="badge ' + (rd.paused ? 'badge--danger' : 'badge--ok') + '">' + (rd.paused ? 'ПАУЗА' : 'live') + '</span></div>' +
+      '<div class="btnrow"><button class="btn btn--ghost" data-open="' + rid + '">' + (open ? 'Свернуть' : 'Редактировать') + '</button>' +
+      '<button class="btn btn--ghost" data-pause="' + rid + '">' + (rd.paused ? '▶ Снять паузу' : '⏸ Пауза (судья)') + '</button></div>' +
+      detail + '</div>';
+  }
+})();
+</script>
+</body>
+</html>
