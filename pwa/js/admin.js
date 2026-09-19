@@ -47,9 +47,14 @@
     render();
   }
   function render() {
-    ({ alerts: tabAlerts, rounds: tabRounds, scorer: tabScorer, pace: tabPace, wizard: tabWizard, tourman: tabTourMan,
-       course: tabCourse, protocol: tabProtocol, announce: tabAnnounce, players: tabPlayers, imexp: tabImexp,
-       rusgolf: tabRusgolf, settings: tabSettings, design: tabDesign, helper: tabHelper })[cur](PANE);
+    var map = { alerts: tabAlerts, rounds: tabRounds, scorer: tabScorer, pace: tabPace, wizard: tabWizard, tourman: tabTourMan,
+      course: tabCourse, protocol: tabProtocol, announce: tabAnnounce, players: tabPlayers, imexp: tabImexp,
+      rusgolf: tabRusgolf, settings: tabSettings, design: tabDesign, helper: tabHelper };
+    try { map[cur](PANE); }
+    catch (e) {
+      console.error('admin tab render', cur, e);
+      if (PANE) PANE.innerHTML = '<div class="card" style="border-color:#c33;">Ошибка вкладки «' + esc(cur) + '»: ' + esc(e && (e.stack || e.message) || e) + '</div>';
+    }
   }
   function audit(action, detail) {
     window.DB.push('audit', { ts: Date.now(), actor: auditActor, action: action, detail: detail || '', tab: cur });

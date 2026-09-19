@@ -68,13 +68,16 @@ test.describe('Пестово клон (demo-mode)', () => {
     await page.click('[data-k="division"][data-v="all"]');
     // составы (3) и карточки (3)
     await page.click('[data-k="roster"][data-v="alpha"]');
-    await expect(page.locator('#tpane table')).toBeVisible();
+    await expect(page.locator('#tpane table').first()).toBeVisible();
     await page.click('[data-k="cardview"][data-v="mini"]');
     await expect(page.locator('#tpane')).toContainText('│');
     expect(pageErrors, 'js-ошибок на странице турниров быть не должно').toEqual([]);
   });
 
   test('админка: вход admin/admin, 15 вкладок, мастер турнира step-0', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', e => pageErrors.push(String(e)));
+    page.on('console', m => { if (m.type() === 'error') pageErrors.push('console: ' + m.text()); });
     await page.goto(page4040('auth.html'));
     await page.fill('#u', 'admin'); await page.fill('#p', 'admin');
     await page.click('button#login, button:text-is("Войти")');
@@ -84,7 +87,8 @@ test.describe('Пестово клон (demo-mode)', () => {
     await expect(page.locator('#admPane')).toContainText('Шаблон', { timeout: 6_000 });
     // применяем шаблон «Клубный чемпионат» → шаг 2 фокат
     await page.click('[data-tpl="club"]');
-    await expect(page.locator('#admPane')).not.toContainText('ошибка', { timeout: 4_000 });
+    await expect(page.locator('#admPane')).not.toContainText('Ошибка вкладки', { timeout: 4_000 });
+    expect(pageErrors, 'js-ошибок в админке быть не должно').toEqual([]);
   });
 
   test('дизайны: ?dsp=2 переключает шаблон, ?dsp=5 аврора', async ({ page }) => {
