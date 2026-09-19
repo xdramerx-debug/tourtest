@@ -24,6 +24,14 @@
   });
 
   function renderList() {
+    try { renderListSafe(); }
+    catch (e) {
+      var w = document.getElementById('tlist');
+      if (w) w.innerHTML = '<div class="card" style="border-color:var(--danger,#c33);">Ошибка отрисовки списка: ' + (e && e.message || e) + '</div>';
+      console.error('renderList error', e);
+    }
+  }
+  function renderListSafe() {
     var wrap = document.getElementById('tlist');
     var items = Object.entries(window.__tours || {});
     if (!items.length) { wrap.innerHTML = '<div class="card">Турниров пока нет. Создайте их в <a href="admin.html">админке</a>.</div>'; return; }

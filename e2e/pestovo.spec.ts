@@ -7,19 +7,22 @@ const page4040 = (path: string) => `${BASE.replace(/\/$/, '')}/${path.replace(/^
 
 test.describe('Пестово клон (demo-mode)', () => {
   test('главная: секции, live-турнир демо-сида, инструменты', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', e => pageErrors.push(String(e)));
     await page.goto(page4040('index.html'));
-    await expect(page.locator('h1, .section__head h2').first()).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('h2[data-i18n="home.live.title"]')).toBeVisible({ timeout: 10_000 });
     await expect(page.locator('#sec-live-body')).toBeVisible();
     // демо-турнир сида должен быть виден как LIVE
     await expect(page.locator('#sec-tours')).toBeVisible({ timeout: 8_000 });
     await expect(page.locator('#sec-tours-body')).toContainText('Кубок открытия сезона');
     await expect(page.locator('#club-numbers')).toContainText(/\d+/);
+    expect(pageErrors, 'js-ошибок на главной быть не должно').toEqual([]);
   });
 
   test('соло-раунд до конца: setup → ввод пэдом → финиш → leaderboard', async ({ page }) => {
     await page.goto(page4040('setup-round.html'));
-    // ждём подгрузку сида users в datalist
-    await page.waitForSelector('#userList option', { timeout: 8_000 });
+    // ждём подгрузку сида users в datalist (datalist-опции attached, но не "visible")
+    await page.waitForSelector('#userList option', { state: 'attached', timeout: 8_000 });
     await page.fill('#playerSearch', 'Иван Петров');
     await page.click('#addByName');
     await page.click('button[data-i18n="setup.create"], form#setupForm button[type="submit"]');
@@ -42,6 +45,8 @@ test.describe('Пестово клон (demo-mode)', () => {
   });
 
   test('турниры из сида: табло/деление/карточки; countback-решётка', async ({ page }) => {
+    const pageErrors: string[] = [];
+    page.on('pageerror', e => pageErrors.push(String(e)));
     await page.goto(page4040('tournaments.html'));
     await expect(page.locator('#tlist')).toContainText('Кубок открытия сезона', { timeout: 8_000 });
     await page.click('a:text-is("Открыть")');
@@ -61,6 +66,7 @@ test.describe('Пестово клон (demo-mode)', () => {
     await expect(page.locator('#tpane table')).toBeVisible();
     await page.click('[data-k="cardview"][data-v="mini"]');
     await expect(page.locator('#tpane')).toContainText('│');
+    expect(pageErrors, 'js-ошибок на странице турниров быть не должно').toEqual([]);
   });
 
   test('админка: вход admin/admin, 15 вкладок, мастер турнира step-0', async ({ page }) => {
