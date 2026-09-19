@@ -61,8 +61,10 @@ test.describe('Пестово клон (demo-mode)', () => {
     }
     // разделение пола (3)
     await page.click('[data-k="division"][data-v="women"]');
-    await expect(page.locator('#tpane')).toContainText('Ольга');
-    await expect(page.locator('#tpane')).not.toContainText('Иван');
+    // дивизион фильтрует именно бордовую таблицу (roster/карточки ниже — общие)
+    const board = page.locator('#tpane .tbl').first();
+    await expect(board).toContainText('Марина');
+    await expect(board).not.toContainText('Иван');
     await page.click('[data-k="division"][data-v="all"]');
     // составы (3) и карточки (3)
     await page.click('[data-k="roster"][data-v="alpha"]');
@@ -97,7 +99,7 @@ test.describe('Пестово клон (demo-mode)', () => {
     await page.goto(page4040('players.html'));
     await expect(page.locator('#roster')).toContainText('Иван Петров', { timeout: 8_000 });
     await page.evaluate(() => (window as any).DB.set('settings/privacy', { enabled: true, maskMode: 'short', players: {} }));
-    await expect(page.locator('#roster')).toContainText(/Иван П\.|И\. Петров|Иван P/, { timeout: 4_000 });
+    await expect(page.locator('#roster')).toContainText('И. П.', { timeout: 4_000 });
   });
 
   test('offline.html и manifest доступны; sw регистрируется без падения', async ({ page }) => {
