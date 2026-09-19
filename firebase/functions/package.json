@@ -1,0 +1,17 @@
+{
+  "name": "pestovo-live-functions",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Cloud Functions: Web Push (VAPID) для ГК «Пестово» Live Scoring",
+  "main": "index.js",
+  "engines": { "node": "20" },
+  "dependencies": {
+    "firebase-admin": "^12.6.0",
+    "firebase-functions": "^6.1.0",
+    "web-push": "^3.6.7"
+  },
+  "scripts": {
+    "lint": "node --check index.js",
+    "test": "node --test test/*.test.mjs"
+  }
+}

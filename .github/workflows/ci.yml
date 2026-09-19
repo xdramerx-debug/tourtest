@@ -31,6 +31,12 @@ jobs:
           node scripts/check-routes.mjs
           node scripts/check-i18n.mjs
           node scripts/check-contrast.mjs
+      - name: pestovo clone tests (pwa engine + firebase functions)
+        run: |
+          node --test tests/pestovo-engine.test.mjs
+          node --test firebase/functions/test/push.test.mjs
+          node --check firebase/functions/index.js
+          node --check firebase/functions/push.js
       - name: build 15 apps
         run: npm run build
       - name: bundle budget

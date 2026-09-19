@@ -24,3 +24,4 @@ apps/server/data/
 .DS_Store
 .vscode/
 .idea/
+pwa/js/firebase-config.js

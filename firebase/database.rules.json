@@ -1,0 +1,63 @@
+{
+  "rules": {
+    "settings": {
+      "design": { ".read": true, ".write": "auth != null" },
+      "privacy": { ".read": true, ".write": "auth != null" },
+      "vapid": { ".read": true, ".write": false },
+      ".read": true,
+      ".write": "auth != null"
+    },
+    "users": {
+      ".read": true,
+      "$uid": {
+        ".write": "auth != null",
+        "privacy": { ".write": true }
+      }
+    },
+    "rounds": {
+      ".read": true,
+      "$rid": {
+        ".write": "auth != null",
+        "players": {
+          "$pid": {
+            "scores": {
+              ".write": "(!data.exists() || data.val() === newData.val()) && (newData.val() == null || (newData.isNumber() && newData.val() >= 0 && newData.val() <= 15))"
+            }
+          }
+        }
+      }
+    },
+    "protocols": {
+      ".read": true,
+      "$pid": {
+        ".write": "auth != null && !data.exists()",
+        ".validate": "newData.hasChildren(['version','createdAt'])"
+      }
+    },
+    "tournaments": {
+      ".read": true,
+      ".write": "auth != null",
+      "broadcasts": { ".read": true },
+      "alerts": { ".read": true }
+    },
+    "alerts": {
+      ".read": true,
+      ".write": true,
+      "$aid": {
+        "status": { ".write": "auth != null" }
+      }
+    },
+    "reactions": {
+      ".read": true,
+      ".write": true
+    },
+    "broadcasts": { ".read": true, ".write": "auth != null" },
+    "push_subscriptions": {
+      ".read": "auth != null",
+      "$subid": { ".write": true }
+    },
+    "audit": { ".read": "auth != null", ".write": "auth != null" },
+    "homerounds": { ".read": true, ".write": true },
+    "$other": { ".read": false, ".write": false }
+  }
+}
