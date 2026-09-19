@@ -27,7 +27,7 @@
     try { renderListSafe(); }
     catch (e) {
       var w = document.getElementById('tlist');
-      if (w) w.innerHTML = '<div class="card" style="border-color:var(--danger,#c33);">Ошибка отрисовки списка: ' + (e && e.message || e) + '</div>';
+      if (w) w.innerHTML = '<div class="card" style="border-color:var(--danger,#c33);">Ошибка отрисовки списка: ' + (e && (e.stack || e.message) || e) + '</div>';
       console.error('renderList error', e);
     }
   }
