@@ -35,7 +35,7 @@ jobs:
           sleep 1
           curl -fsS localhost:4020/ | grep -qi clubscore
           curl -fsS localhost:4030/ | grep -qi clubscore
-          curl -fsS localhost:4040/index.html | grep -qi pestovo
+          curl -fsS localhost:4040/index.html | grep -qiE 'pestovo|Пестово'
       - name: playwright
         run: npx playwright test --reporter=github,list
         env:
