@@ -89,3 +89,23 @@ npx playwright test         # e2e (в CI; headless, chromium)
 ## Merge
 
 Сборка v2 живёт в PR (методологически merge — одним кликом пользователя).
+
+## v3 — клон «Пестово Live Scoring» (vanilla PWA, этап 1)
+
+Статический PWA-клон в `pwa/` (без сборщика, IIFE-модули, `?v=3.0.0`):
+страницы index / setup-round / solo / leaderboard / guide / handicap / auth / offline / design-preview.
+
+- **Запуск локально:** любой static-server (`npx serve pwa` или `python3 -m http.server -d pwa`).
+- **На GH Pages:** `/pwa/` (упаковывается в `dist-pages` веткой `deploy-pages.yml`).
+- **Demo-режим:** без `js/firebase-config.js` работает встроенный localStorage-backend
+  (realtime-подписки через BroadcastChannel, сид из 10 игроков, вход `admin/admin`),
+  офлайн-очередь `pc.queue` + SW-синк `SYNC_SCORES`.
+- **Реальный Firebase:** создайте `pwa/js/firebase-config.js` по `js/firebase-config.example.js`
+  (файл в .gitignore). Rules — `firebase/database.rules.json` (deploy-ready),
+  Functions (Web Push VAPID, broadcasts/alerts) — `firebase/functions/`.
+- **Тесты:** `node --test tests/pestovo-engine.test.mjs` (20 проверок WHS/pace/стейблфорд/SI-карточки)
+  и `node --test firebase/functions/test/push.test.mjs`. Оба шага — в CI (`ci.yml`).
+
+Этапы §13 брифа #3: ✅ 1 (фундамент PWA, раунды соло, WHS, дизайны).
+Следующие: турниры (5 видов, мастер, протоколы), админка (15 вкладок),
+лента/реакции/push, assistant (pdf.js RAG), RUSGOLF-прокси, импорт/экспорт.

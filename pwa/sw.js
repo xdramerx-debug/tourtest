@@ -6,7 +6,7 @@ var PRECACHE = 'pc-precache-' + VERSION;
 var RUNTIME = 'pc-runtime-' + VERSION;
 var CORE = [
   'index.html', 'setup-round.html', 'solo.html', 'leaderboard.html', 'guide.html',
-  'handicap.html', 'auth.html', 'offline.html', 'manifest.json',
+  'handicap.html', 'auth.html', 'offline.html', 'design-preview.html', 'manifest.json',
   'css/base.css',
   'js/config.js', 'js/i18n.js', 'js/db.js', 'js/auth.js', 'js/util.js', 'js/ui.js',
   'js/engine/whs.js', 'js/home.js', 'js/setup.js', 'js/solo.js', 'js/leaderboard.js',

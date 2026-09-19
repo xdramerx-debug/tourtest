@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="ru" data-dsp="0">
+<head>
+  <meta charset="utf-8">
+  <title>Превью дизайна · ГК «Пестово»</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&family=Playfair+Display:wght@600;700&family=JetBrains+Mono:wght@500;700&display=swap">
+  <link rel="stylesheet" href="css/base.css?v=3.0.0">
+  <style>
+    .tplGrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;}
+    .tplCard{cursor:pointer;border:2px solid transparent;border-radius:14px;background:var(--card);padding:12px;}
+    .tplCard.is-active{border-color:var(--accent);}
+    .mixRow{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0 14px;}
+    .mixTag{border:1px solid var(--border);padding:4px 10px;border-radius:999px;font-size:12px;cursor:pointer;background:var(--bg);}
+    .mixTag.is-on{background:var(--accent);color:var(--on-accent,#fff);border-color:var(--accent);}
+  </style>
+</head>
+<body>
+<div id="app-header"></div>
+<main class="page">
+  <div class="page-head">
+    <h1>6 шаблонов дизайна (§9)</h1>
+    <p class="desc">Единый шаблон на весь сайт или микс per-блок. URL-параметр <code>?dsp=N</code> переопределяет всё. Выбор сохраняется в БД при входе администратора, иначе — локально.</p>
+  </div>
+
+  <div class="tplGrid" id="tplGrid"></div>
+
+  <div class="card" style="margin-top:18px">
+    <h3>Микс per-блок (§9.2)</h3>
+    <p style="font-size:13px;color:var(--muted)">Шапка / Боковые блоки / Таблицы / Кнопки-набор — можно настроить отдельно. Клик по тегу применяет шаблон к блоку (<code>data-dspb-*</code>).</p>
+    <div id="mixUI"></div>
+  </div>
+
+  <div class="card" id="demo" style="margin-top:18px">
+    <div class="card__head" data-dspb="header-scope">
+      <span class="card__title">Демо-компоненты</span>
+      <span class="badge badge--tee-bl">BL</span>
+    </div>
+    <div class="holesumo">
+      <div class="stat"><b>72</b>par</div>
+      <div class="stat"><b><span class="badge hcp-band--low">8</span></b>полевой</div>
+      <div class="stat"><b>E</b>± пар</div>
+      <div class="stat"><b>F9</b>порядок</div>
+    </div>
+    <div class="tablewrap"><table class="tbl"><thead><tr><th>#</th><th>Игрок</th><th class="num">Гросс</th><th class="num">Стбл</th></tr></thead>
+      <tbody><tr><td>1</td><td>Иван П.</td><td class="num">78</td><td class="num">36</td></tr>
+      <tr><td>2</td><td>Ольга С.</td><td class="num">81</td><td class="num">34</td></tr></tbody></table></div>
+    <div class="btnrow"><button class="btn btn--accent">Акцент</button><button class="btn">Обычная</button><button class="btn btn--ghost">Призрак</button></div>
+    <div class="pad"><button>1</button><button>2</button><button>3</button><button>4</button><button>5</button><button class="is-active">6</button><button>7</button><button>8</button><button>9</button></div>
+    <div class="card pace pace--behind"><small>pace</small><div class="pace__bar"><div class="pace__fill" style="width:62%"></div></div></div>
+  </div>
+
+  <div class="btnrow" style="margin-top:16px">
+    <button class="btn btn--accent" id="save">Сохранить выбор</button>
+    <button class="btn btn--ghost" id="reset">Сбросить</button>
+  </div>
+</main>
+
+<script src="js/config.js?v=3.0.0"></script>
+<script src="js/i18n.js?v=3.0.0"></script>
+<script src="js/db.js?v=3.0.0"></script>
+<script src="js/auth.js?v=3.0.0"></script>
+<script src="js/util.js?v=3.0.0"></script>
+<script src="js/ui.js?v=3.0.0"></script>
+<script>
+(function () {
+  'use strict';
+  window.UI.mount('');
+  var NAMES = ['0 · Классик (газета клуба)', '1 · Минимал (скандинавия)', '2 · Неон-найт (тёмный)', '3 · Наследие (тёплое золото)', '4 · Спорт-ТВ (табло)', '5 · Аврора (стекло)'];
+  var cur = { dsp: Number(document.documentElement.getAttribute('data-dsp') || 0), blocks: {} };
+  var MIX_KEYS = [
+    { k: 'nav', label: 'Шапка/нав' }, { k: 'card', label: 'Карточки' }, { k: 'tables', label: 'Таблицы' },
+    { k: 'buttons', label: 'Кнопки' }, { k: 'stats', label: 'Плитки' }, { k: 'badges', label: 'Бейджи' },
+    { k: 'tabs', label: 'Табы' }, { k: 'footer', label: 'Подвал' }, { k: 'round-card', label: 'Карточка раунда' }, { k: 'forms', label: 'Формы' }
+  ];
+
+  function renderTpl() {
+    document.getElementById('tplGrid').innerHTML = NAMES.map(function (n, i) {
+      return '<div class="tplCard' + (cur.dsp === i ? ' is-active' : '') + '" data-i="' + i + '">' +
+        '<div data-dsp-preview="' + i + '" style="border-radius:10px;overflow:hidden;">' + swatch(i) + '</div>' +
+        '<b style="display:block;margin-top:8px;">' + n + '</b></div>';
+    }).join('');
+    document.getElementById('tplGrid').querySelectorAll('[data-i]').forEach(function (c) {
+      c.addEventListener('click', function () { cur.dsp = Number(c.getAttribute('data-i')); apply(); renderTpl(); });
+    });
+  }
+  function swatch(i) {
+    return '<div data-dsp-inline="' + i + '" style="padding:14px;min-height:74px;background:var(--dm-bg,var(--bg));color:var(--dm-fg,var(--fg));">' +
+      '<div style="display:flex;justify-content:space-between;"><b>Пестово Live</b><span class="badge">F12</span></div>' +
+      '<div style="margin-top:8px;display:flex;gap:6px;"><span class="btn btn--accent" style="padding:4px 12px;border-radius:8px;font-size:12px;">Кнопка</span>' +
+      '<span class="btn" style="padding:4px 12px;border-radius:8px;font-size:12px;">Таблица</span></div></div>';
+  }
+
+  function renderMix() {
+    document.getElementById('mixUI').innerHTML = MIX_KEYS.map(function (m) {
+      var chips = ['<span class="mixTag' + (!cur.blocks[m.k] ? ' is-on' : '') + '" data-k="' + m.k + '" data-v="">общий</span>'];
+      for (var i = 0; i < 6; i++) chips.push('<span class="mixTag' + (cur.blocks[m.k] === i ? ' is-on' : '') + '" data-k="' + m.k + '" data-v="' + i + '">№' + i + '</span>');
+      return '<div style="margin:10px 0;"><b>' + m.label + ':</b> <span>' + chips.join(' ') + '</span></div>';
+    }).join('');
+    document.getElementById('mixUI').querySelectorAll('.mixTag').forEach(function (tag) {
+      tag.addEventListener('click', function () {
+        var k = tag.getAttribute('data-k'); var v = tag.getAttribute('data-v');
+        if (v === '') delete cur.blocks[k]; else cur.blocks[k] = Number(v);
+        apply(); renderMix();
+      });
+    });
+  }
+
+  function apply() {
+    document.documentElement.setAttribute('data-dsp', String(cur.dsp));
+    MIX_KEYS.forEach(function (m) {
+      var a = 'data-dspb-' + m.k;
+      if (cur.blocks[m.k] == null) document.documentElement.removeAttribute(a);
+      else document.documentElement.setAttribute(a, String(cur.blocks[m.k]));
+    });
+    try { localStorage.setItem('pc.dsp.preview', JSON.stringify(cur)); } catch (e) {}
+  }
+
+  try { var saved = JSON.parse(localStorage.getItem('pc.dsp.preview') || 'null'); if (saved) cur = saved; } catch (e) {}
+  apply(); renderTpl(); renderMix();
+
+  document.getElementById('save').addEventListener('click', function () {
+    var hasMix = MIX_KEYS.some(function (m) { return cur.blocks[m.k] != null; });
+    var payload = { mode: hasMix ? 'mix' : 'single', global: cur.dsp, pages: {}, blocks: cur.blocks };
+    window.DB.set('settings/design', payload)
+      .then(function () { window.Util.toast(window.Auth.isAdmin() ? 'Сохранено в БД (settings/design)' : 'Сохранено (demo-хранилище)'); })
+      .catch(function () { window.Util.toast('Не удалось сохранить', 'err'); });
+  });
+  document.getElementById('reset').addEventListener('click', function () {
+    cur = { dsp: 0, blocks: {} }; apply(); renderTpl(); renderMix();
+  });
+})();
+</script>
+</body>
+</html>
