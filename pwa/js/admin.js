@@ -14,19 +14,22 @@
   var PANE, auditActor = 'admin';
 
   /* --- вход --- */
+  var authSeen = false, authUser = null;
   function gate() {
     var g = document.getElementById('gate');
-    if (window.Auth.isAdmin()) {
-      g.innerHTML = '<p style="color:var(--good)">✓ ' + (window.Auth.currentUser() && window.Auth.currentUser().name || 'Администратор') + '</p>';
+    var u = authSeen ? authUser : (window.Auth.currentUser && window.Auth.currentUser());
+    if (u && u.role === 'admin') {
+      g.innerHTML = '<p style="color:var(--good)">✓ ' + (u.name || 'Администратор') + '</p>';
       document.getElementById('admBody').style.display = '';
       document.getElementById('admMode').textContent = 'Режим: ' + window.DB.mode() + ' · очередь: ' + (window.DB.queuedCount ? window.DB.queuedCount() : 0);
       initTabs();
     } else {
-      g.innerHTML = '<div class="card" style="max-width:420px;">Для доступа войдите: <a class="btn btn--accent" href="auth.html">Вход</a><br><small style="color:var(--muted)">Демо: admin / admin</small></div>';
+      g.innerHTML = '<div class="card" style="max-width:420px;">Для доступа войдите: <a class="btn btn--accent" href="auth.html">Вход</a><br><small style="color:var(--muted)\">Демо: admin / admin</small></div>';
       document.getElementById('admBody').style.display = 'none';
     }
   }
-  window.Auth.onChange(gate); gate();
+  window.Auth.onChange(function (u) { authSeen = true; authUser = u; gate(); });
+  gate();
 
   function initTabs() {
     var bar = document.getElementById('admTabs');

@@ -38,9 +38,12 @@ test.describe('Пестово клон (demo-mode)', () => {
     await expect(page.locator('#sumTiles')).toContainText(/4|5|6/, { timeout: 5_000 });
     // офлайн: доска pace отрисована, hole>=6 после 5 кликов
     await expect(page.locator('#holeNum')).toContainText('6', { timeout: 5_000 });
-    await page.click('#finishBtn');
-    page.on('dialog', d => d.accept());
-    await page.waitForURL(/leaderboard\.html/, { timeout: 10_000 });
+    page.on('dialog', d => d.accept()); // confirm() на финиш
+    await page.locator('#finishBtn').click();
+    // возможен крит выхода из аттеста визиты («Одобрить») до финиша
+    const approve = page.locator('button:has-text("Одобрить")');
+    approve.waitFor({ state: 'visible', timeout: 3_000 }).then(() => approve.click()).catch(() => {});
+    await page.waitForURL(/leaderboard\.html/, { timeout: 20_000 });
     await expect(page.locator('#lb-list')).toContainText('Иван', { timeout: 8_000 });
   });
 
