@@ -4,6 +4,7 @@
   "use strict";
   UI.initChrome();
   const $ = UI.$;
+  const $$ = UI.$$;
 
   function stats() {
     const ps = APP.players();

@@ -44,7 +44,7 @@ window.UI = (function () {
     return '<span class="avatar ' + (cls || "") + '">' + esc(initials(p || {})) + "</span>";
   }
 
-  const CAT_COLORS = ["#4f8cff", "#35d07f", "#f5b83d", "#ff8a5c", "#c792ea", "#5cd6d9", "#ff6b9d", "#9ccc65"];
+  const CAT_COLORS = ["#c9a961", "#7fbf9a", "#b9a7d9", "#d4917a", "#8fb3c9", "#d9c07a", "#c98fa6", "#a3b98a"];
   function catIndex(catId) {
     const cats = (APP.meta() && APP.meta().categories) || [];
     const i = cats.findIndex((c) => c.id === catId);
@@ -186,6 +186,7 @@ window.UI = (function () {
     statusPill: statusPill, rowStatusHtml: rowStatusHtml,
     initChrome: initChrome, makeQR: makeQR,
     countdownTo: countdownTo, nextRoundStart: nextRoundStart,
-    fmtDate: fmtDate, printPage: printPage
+    fmtDate: fmtDate, printPage: printPage,
+    fmtToPar: (v) => GolfCalc.fmtToPar(v)
   };
 })();

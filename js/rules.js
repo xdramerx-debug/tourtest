@@ -40,7 +40,7 @@
     $("#print-area").innerHTML =
       '<div class="doc"><div class="doc-header"><div><h1 style="font-size:18px">' + UI.esc(m.name) + " — Условия соревнования и Local Rules</h1>" +
       "<div class='doc-sub'>" + UI.esc(m.subtitle || "") + " · " + UI.fmtDate((m.dates || {}).round1) + "</div></div>" +
-      '<div class="doc-logo">⛳ Live Scoring</div></div>' +
+      '<div class="doc-logo">LIVE SCORING · ПЕСТОВО</div></div>' +
       "<h3>Conditions of Competition</h3>" + conds +
       "<h3>Local Rules</h3>" + lr +
       "<h3>Pace of Play</h3><p>18 лунок: " + UI.esc(pp.total18 || "") + ". " + UI.esc(pp.check9 || "") + ". " + UI.esc(pp.perHole || "") + ". Штрафы: " + UI.esc(pp.warnings || "") + "</p>" +

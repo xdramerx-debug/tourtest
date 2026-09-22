@@ -4,6 +4,7 @@
   "use strict";
   UI.initChrome();
   const $ = UI.$;
+  const $$ = UI.$$;
   const params = new URLSearchParams(location.search);
   const pid = params.get("id");
   const rno = Number(params.get("round") || "1");
@@ -249,7 +250,7 @@
       '<div class="doc"><div class="doc-header"><div><h1>' + UI.esc(m.name) + " · Скоркарта · Раунд " + rno + "</h1>" +
       "<div class='doc-sub'>" + UI.esc(p.lastName + " " + p.firstName) + " · " + UI.esc(p.club || "") + " · " + UI.fmtDate((m.dates || {}).round1) +
       " · " + (ti.tee ? ti.tee.label + " (CR " + ti.tee.cr + " / Slope " + ti.tee.slope + ")" : "") + "</div></div>" +
-      '<div class="doc-logo">Playing HCP: ' + (ti.ph != null ? ti.ph : "—") + "<br>⛳ Live Scoring</div></div>" +
+      '<div class="doc-logo">Playing HCP: ' + (ti.ph != null ? ti.ph : "—") + "<br>LIVE SCORING · ПЕСТОВО</div></div>" +
       "<table><thead><tr><td class='l'>Лунка</td>" +
       holes.slice(0, 9).map((h) => "<td>" + h.n + "</td>").join("") +
       "<td>OUT</td>" + holes.slice(9).map((h) => "<td>" + h.n + "</td>").join("") + "<td>IN</td><td>Σ</td></tr></thead><tbody>" +

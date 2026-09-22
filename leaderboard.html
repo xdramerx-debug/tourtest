@@ -6,24 +6,15 @@
   <title>Лидерборд · Live Scoring Пестово</title>
   <meta name="description" content="Живой лидерборд турнира по гольфу: позиции, раунды, To Par, hole-by-hole." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛳</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    .hole-grid { display: grid; grid-template-columns: repeat(18, minmax(30px, 1fr)) auto auto auto; gap: 4px; }
-    .hole-grid .hg-cell { text-align: center; font-family: var(--mono); font-size: 13px; border-radius: 6px; padding: 6px 2px; }
-    .hole-grid .hg-par { text-align: center; color: var(--muted); font-size: 11px; }
-    .hole-grid .hg-n { text-align: center; font-size: 10.5px; color: var(--muted); }
-    .hole-grid .hg-n .stroke-dot { color: var(--gold); }
-    .detail-head { display: flex; align-items: center; gap: 14px; margin-bottom: 14px; flex-wrap: wrap; }
-    @media (max-width: 900px) {
-      .hole-grid { grid-template-columns: repeat(9, minmax(28px, 1fr)) auto auto auto; }
-      .hole-grid .hg-in { display: none; }
-    }
-  </style>
   <style>@media print { @page { size: A4 landscape; margin: 10mm; } }</style>
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="index.html"><span class="brand-mark">⛳</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">P</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
   <nav class="mainnav">
     <a href="index.html">Турнир</a>
     <a href="leaderboard.html" class="active">Лидерборд</a>
@@ -57,8 +48,8 @@
     <input id="f-q" type="search" placeholder="Найти по имени…" style="min-width:170px" />
     <div class="spacer"></div>
     <span id="lb-count" class="muted small"></span>
-    <button class="btn btn-sm" id="b-print" title="Скачать PDF / печать">🖨 PDF</button>
-    <button class="btn btn-sm" id="b-tv">📺 TV-режим</button>
+    <button class="btn btn-sm" id="b-print" title="Скачать PDF / печать">PDF</button>
+    <button class="btn btn-sm" id="b-tv">TV-режим</button>
   </div>
 
   <div class="table-wrap">
@@ -88,7 +79,7 @@
     <h1 class="tv-title" id="tv-title"></h1>
     <div class="tv-sub" id="tv-sub"></div>
     <div class="table-wrap" style="margin-top:10px"><table class="tbl" id="tv-table"></table></div>
-    <p style="text-align:center;margin-top:18px"><button class="btn" id="tv-exit">✕ Выйти из TV-режима</button></p>
+    <p style="text-align:center;margin-top:18px"><button class="btn" id="tv-exit">Выйти из TV-режима</button></p>
   </div>
 </main>
 

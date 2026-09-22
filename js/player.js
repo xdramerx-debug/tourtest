@@ -147,7 +147,7 @@
     $("#print-area").innerHTML =
       '<div class="doc"><div class="doc-header"><div><h1 style="font-size:15px">' + UI.esc(p.lastName + " " + p.firstName) + "</h1>" +
       "<div class='doc-sub'>" + UI.esc(m.name) + " · " + UI.esc(m.subtitle || "") + "</div></div>" +
-      '<div class="doc-logo">⛳<br>Live Scoring</div></div>' +
+      '<div class="doc-logo">LIVE SCORING<br>ПЕСТОВО</div></div>' +
       '<table><tbody>' +
       "<tr><td class='l'>Клуб</td><td class='l'>" + UI.esc(p.club || "—") + "</td></tr>" +
       "<tr><td class='l'>Категория</td><td class='l'>" + UI.esc(UI.catLabel(p.category)) + "</td></tr>" +
