@@ -14,7 +14,7 @@
   function teeInfo() {
     const m = APP.meta(), c = APP.config();
     const tee = m.tees && m.tees[c.tee] ? m.tees[c.tee] : Object.values(m.tees || {})[0];
-    const ph = GolfCalc.playingHandicap(p.hcpIndex, tee.slope, tee.cr, tee.par, (c.scoring || {}).playingHandicapAllowancePct);
+    const ph = tee ? GolfCalc.playingHandicap(p.hcpIndex, tee.slope, tee.cr, tee.par, (c.scoring || {}).playingHandicapAllowancePct) : null;
     return { tee: tee, ph: ph, strokes: GolfCalc.strokeHoleSet(APP.holes(), ph) };
   }
 
@@ -26,8 +26,9 @@
     const vals = {};
     $$("#sc-table input[data-n]").forEach((inp) => {
       const n = Number(inp.dataset.n);
-      if (inp.classList.contains("sc-flagged")) vals[n] = "X";
-      else if (inp.value !== "" && !isNaN(Number(inp.value))) vals[n] = Number(inp.value);
+      if (!inp.classList.contains("sc-flagged") && inp.value !== "" && !isNaN(Number(inp.value))) {
+        vals[n] = Number(inp.value);
+      }
     });
     return vals;
   }
@@ -105,11 +106,12 @@
 
   function recompute() {
     const m = APP.meta();
+    const c = APP.config() || {};
     const ti = teeInfo();
     const holes = APP.holes();
     const vals = currentValues();
-    const useStable = (m.config && m.config.scoring && m.config.scoring.stableford) !== false;
-    const useMax = (m.config && m.config.scoring && m.config.scoring.maxScoreRule) !== false;
+    const useStable = (c.scoring || {}).stableford !== false;
+    const useMax = (c.scoring || {}).maxScoreRule !== false;
     let gOut = 0, gIn = 0, nOut = 0, nIn = 0, st = 0, played = 0;
     const playedAny = Object.keys(vals).length;
     holes.forEach((h, i) => {
