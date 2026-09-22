@@ -3,6 +3,7 @@
   "use strict";
   UI.initChrome();
   const $ = UI.$;
+  const $$ = UI.$$;
   const state = {
     round: String(SITE_CONFIG.defaultRound || ""),
     cat: "", q: "", top: 0, metric: "net",
@@ -248,7 +249,7 @@
     $("#print-area").innerHTML =
       '<div class="doc"><div class="doc-header"><div><h1>' + UI.esc(m.name) + " — " + rl + "</h1>" +
       "<div class='doc-sub'>Лидерборд · " + UI.esc(m.subtitle || "") + " · " + new Date().toLocaleString("ru-RU") + "</div></div>" +
-      '<div class="doc-logo">' + UI.esc((m.sponsor && m.sponsor.title) || "") + "<br>⛳ Live Scoring</div></div>" +
+      '<div class="doc-logo">' + UI.esc((m.sponsor && m.sponsor.title) || "") + "<br>LIVE SCORING · ПЕСТОВО</div></div>" +
       "<table><thead>" + head + "</thead><tbody>" + body + "</tbody></table>" +
       '<div class="doc-watermark">LIVE</div>' +
       '<div class="doc-footer"><div class="sign">Главный судья: ____________________</div>' +

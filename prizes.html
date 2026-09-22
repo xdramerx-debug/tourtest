@@ -6,16 +6,14 @@
   <title>Призы · Live Scoring Пестово</title>
   <meta name="description" content="Специальные призы турнира: Longest Drive, Closest to the Pin, Hole-in-One. Live-ввод результатов." />
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏆</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,500&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
-  <style>
-    .prize-card .leader { display: flex; align-items: center; gap: 12px; background: rgba(247, 201, 72, 0.08); border: 1px solid rgba(247, 201, 72, 0.4); border-radius: 10px; padding: 10px 14px; margin: 10px 0; }
-    .prize-card .leader b { font-size: 17px; }
-    .prize-card .leader .val { margin-left: auto; font-family: var(--mono); font-size: 20px; color: var(--gold); font-weight: 800; }
-  </style>
 </head>
 <body>
 <header class="topbar">
-  <a class="brand" href="index.html"><span class="brand-mark">⛳</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
+  <a class="brand" href="index.html"><span class="brand-mark" aria-hidden="true">P</span><span><b>LIVE SCORING</b><span>Пестово</span></span></a>
   <nav class="mainnav">
     <a href="index.html">Турнир</a>
     <a href="leaderboard.html">Лидерборд</a>

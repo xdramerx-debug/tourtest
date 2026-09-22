@@ -13,13 +13,20 @@ window.GolfCalc = (function () {
     return Math.round(hi * (slope / 113) + (cr - par) * sca);
   }
 
-  // Индексы лунок (0..17), получающие удары, по возрастанию Stroke Index
+  // Индексы лунок (0..17), получающие один или несколько ударов по Stroke Index.
   function strokeHoleSet(holes, ph) {
-    if (!ph || ph <= 0) return new Set();
+    if (!Number.isFinite(ph) || ph <= 0 || !holes.length) return new Set();
     const ranked = holes
-      .map((h, i) => ({ i: i, si: h.si }))
+      .map((h, i) => ({ i: i, si: Number(h.si) || 99 }))
       .sort((a, b) => (a.si - b.si) || (a.i - b.i));
-    return new Set(ranked.slice(0, Math.min(ph, holes.length)).map((r) => r.i));
+    const strokes = Math.floor(ph);
+    const result = new Set();
+    for (let pass = 0; pass < Math.ceil(strokes / holes.length); pass++) {
+      ranked.forEach((r, i) => {
+        if (pass * holes.length + i < strokes) result.add(r.i);
+      });
+    }
+    return result;
   }
 
   function netDoubleBogey(par, stroke) {

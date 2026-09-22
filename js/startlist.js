@@ -72,7 +72,7 @@
       "<div><h1>" + UI.esc(m.name) + " — Стартовый лист</h1>" +
       "<div class='doc-sub'>" + UI.esc(m.subtitle || "") + " · " + UI.fmtDate((m.dates || {}).round1) +
       " · интервал " + (m.intervalMin || "—") + " мин · старт с " + (m.firstTee || 1) + "-й ти</div></div>" +
-      '<div class="doc-logo">' + UI.esc((m.sponsor && m.sponsor.title) || "") + "<br>⛳ Live Scoring</div></div>" +
+      '<div class="doc-logo">' + UI.esc((m.sponsor && m.sponsor.title) || "") + "<br>LIVE SCORING · ПЕСТОВО</div></div>" +
       '<table><thead><tr><th>Время</th><th>Ти</th><th>Группа</th><th class="l">Состав (HI)</th><th>QR группы</th></tr></thead><tbody>' +
       body + "</tbody></table>" +
       '<div class="doc-watermark">START LIST</div>' +
