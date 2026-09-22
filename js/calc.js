@@ -5,32 +5,55 @@
 window.GolfCalc = (function () {
   "use strict";
 
-  // Playing Handicap (WHS): round( HI × Slope/113 + (CR − Par) × SCA% )
-  // SCA (Stroke Competition Allowance): 85% stroke play (с 2025), 95% stableford.
-  function playingHandicap(hi, slope, cr, par, scaPct) {
-    if (hi == null || slope == null || cr == null) return null;
-    const sca = (scaPct == null ? 100 : scaPct) / 100;
-    return Math.round(hi * (slope / 113) + (cr - par) * sca);
+  // WHS: Course Handicap = HI × Slope/113 + (CR − Par);
+  // Playing Handicap = round( Course Handicap × SCA% ).
+  // SCA (Stroke Competition Allowance): 95% stroke play / stableford по умолчанию.
+  function courseHandicap(hi, slope, cr, par) {
+    if (hi == null || slope == null || cr == null || par == null) return null;
+    return Number(hi) * (Number(slope) / 113) + (Number(cr) - Number(par));
   }
 
-  // Индексы лунок (0..17), получающие один или несколько ударов по Stroke Index.
-  function strokeHoleSet(holes, ph) {
-    if (!Number.isFinite(ph) || ph <= 0 || !holes.length) return new Set();
+  function playingHandicap(hi, slope, cr, par, scaPct) {
+    const ch = courseHandicap(hi, slope, cr, par);
+    if (ch == null) return null;
+    const sca = (scaPct == null ? 100 : Number(scaPct)) / 100;
+    return Math.round(ch * sca);
+  }
+
+  // Число гандикап-ударов на каждой лунке (по индексу 0..17).
+  // Удары раздаются по возрастанию Stroke Index; при PH > 18 второй круг раздачи.
+  // Отрицательный PH (plus-handicap) забирает удары с лунок с наибольшим SI.
+  function strokesPerHole(holes, ph) {
+    const out = holes.map(() => 0);
+    if (!Number.isFinite(ph) || ph === 0 || !holes.length) return out;
     const ranked = holes
       .map((h, i) => ({ i: i, si: Number(h.si) || 99 }))
       .sort((a, b) => (a.si - b.si) || (a.i - b.i));
-    const strokes = Math.floor(ph);
-    const result = new Set();
-    for (let pass = 0; pass < Math.ceil(strokes / holes.length); pass++) {
-      ranked.forEach((r, i) => {
-        if (pass * holes.length + i < strokes) result.add(r.i);
-      });
+    const total = Math.abs(Math.trunc(ph));
+    const sign = ph > 0 ? 1 : -1;
+    for (let k = 0; k < total; k++) {
+      const idx = sign > 0 ? k % holes.length : holes.length - 1 - (k % holes.length);
+      out[ranked[idx].i] += sign;
     }
-    return result;
+    return out;
   }
 
-  function netDoubleBogey(par, stroke) {
-    return 2 * par - (stroke ? 1 : 0);
+  // Индексы лунок, получающих хотя бы один удар (совместимость с UI).
+  function strokeHoleSet(holes, ph) {
+    const per = strokesPerHole(holes, ph);
+    return new Set(per.map((n, i) => (n > 0 ? i : -1)).filter((i) => i >= 0));
+  }
+
+  // Maximum Score Rule: Net Double Bogey — максимальный gross на лунке
+  // для целей гандикапа: par + 2 + полученные удары.
+  function netDoubleBogey(par, strokes) {
+    return Number(par) + 2 + (Number(strokes) || 0);
+  }
+
+  // Результат лунки: gross с учётом NDB и net.
+  function holeResult(gross, par, strokes, useMax) {
+    const capped = useMax ? Math.min(gross, netDoubleBogey(par, strokes)) : gross;
+    return { adjGross: capped, net: capped - (Number(strokes) || 0) };
   }
 
   function toPar(gross, par) {
@@ -43,15 +66,10 @@ window.GolfCalc = (function () {
     return (v > 0 ? "+" : "") + v;
   }
 
-  // Stableford (WHS): очки по net-результату к пар
+  // Stableford (R&A/USGA): albatross 5, eagle 4, birdie 3, par 2, bogey 1, double+ 0.
   function stablefordPoints(netToPar) {
     if (netToPar == null) return null;
-    if (netToPar <= 0) return 5;
-    if (netToPar === 1) return 4;
-    if (netToPar === 2) return 3;
-    if (netToPar === 3) return 2;
-    if (netToPar === 4) return 1;
-    return 0;
+    return Math.max(0, 2 - netToPar);
   }
 
   // Класс цветовой индикации к гру-результату
@@ -85,7 +103,7 @@ window.GolfCalc = (function () {
     const ph = tee
       ? playingHandicap(player.hcpIndex, tee.slope, tee.cr, tee.par, scf.playingHandicapAllowancePct)
       : null;
-    const strokeSet = strokeHoleSet(holes, ph);
+    const perHole = strokesPerHole(holes, ph);
 
     const rows = [];
     let gSum = 0, nSum = 0, sSum = 0, played = 0, numeric = 0, hasWD = false, hasDQ = false;
@@ -96,12 +114,11 @@ window.GolfCalc = (function () {
       const flag = isNum ? null : raw; // "X" | "WD" | "DQ"
       if (flag === "WD") hasWD = true;
       if (flag === "DQ") hasDQ = true;
-      const stroke = strokeSet.has(i) ? 1 : 0;
+      const stroke = perHole[i];
       let gross = null, net = null, tpg = null, tpn = null, st = null;
       if (isNum) {
         gross = raw;
-        net = gross - stroke;
-        if (useMax && net > netDoubleBogey(h.par, stroke)) net = netDoubleBogey(h.par, stroke);
+        net = holeResult(gross, h.par, stroke, useMax).net;
         tpg = toPar(gross, h.par);
         tpn = toPar(net, h.par);
         st = useStable ? stablefordPoints(tpn) : null;
@@ -276,9 +293,12 @@ window.GolfCalc = (function () {
   }
 
   return {
+    courseHandicap: courseHandicap,
     playingHandicap: playingHandicap,
+    strokesPerHole: strokesPerHole,
     strokeHoleSet: strokeHoleSet,
     netDoubleBogey: netDoubleBogey,
+    holeResult: holeResult,
     toPar: toPar,
     fmtToPar: fmtToPar,
     stablefordPoints: stablefordPoints,
